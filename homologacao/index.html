@@ -79,7 +79,8 @@ function renderAI(ai,data){
  [bio,niche,visual,ideas].forEach(x=>x.replaceChildren());
  if(!ai){
   bio.append(node("p","Análise por IA não disponível. Os dados coletados estão apresentados; configure GEMINI_API_KEY nos secrets da Edge Function para gerar diagnóstico estratégico.","muted"));
-  niche.append(node("p",(data.competitors||[]).length+" perfil(is) de referência coletado(s). Configure Gemini para receber comparação estratégica.","muted"));
+  if(!(data.competitors||[]).length)niche.append(node("p","Nenhum concorrente foi informado. Adicione até três perfis para comparar os indicadores.","muted"));
+  (data.competitors||[]).forEach(c=>{const card=node("article",undefined,"competitor");card.append(node("h4","@"+safe(c.profile?.username)));card.append(node("p","Seguidores: "+number(c.profile?.followers_count)+" · Posts: "+number(c.profile?.media_count),"post-meta"));card.append(node("p","Engajamento médio da amostra: "+percent(c.metrics_summary?.avg_engagement_rate)));if(c.error)card.append(node("p",c.error+" "+safe(c.hint,""),"muted"));niche.append(card);});
   visual.append(node("p","As miniaturas e métricas dos posts estão abaixo. A análise interpretativa requer GEMINI_API_KEY.","muted"));
   ideas.append(node("p","Configure GEMINI_API_KEY para gerar sugestões personalizadas de posts e roteiros de Reels.","muted"));
   return;
