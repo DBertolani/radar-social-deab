@@ -1,315 +1,127 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10131b">
-  <meta name="description" content="Radar Social DEAB — ambiente de homologação para análise de perfis do Instagram.">
-  <title>Radar Social DEAB — Homologação</title>
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #0c0f16; --surface: #141925; --surface-2: #1b2230;
-      --border: #293244; --text: #edf2fa; --muted: #9ba8bb;
-      --accent: #8b7cff; --accent-2: #6b5ce7;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at top, #1b2140 0, var(--bg) 42rem); color: var(--text); }
-    button, input, select { font: inherit; }
-    .shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 38px 0 64px; }
-    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; }
-    .eyebrow { color: #b6adff; font-size: .76rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
-    h1 { margin: 7px 0 0; font-size: clamp(1.65rem, 4vw, 2.35rem); letter-spacing: -.045em; }
-    .environment { border: 1px solid #554b9a; background: #28234c; color: #d7d1ff; border-radius: 999px; padding: 8px 12px; font-size: .78rem; font-weight: 750; white-space: nowrap; }
-    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 22px; box-shadow: 0 18px 55px #0002; margin-bottom: 18px; }
-    .panel h2 { margin: 0 0 6px; font-size: 1.08rem; }
-    .sub { color: var(--muted); margin: 0 0 18px; font-size: .9rem; line-height: 1.5; }
-    .config-grid, .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-    .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-    label { color: #cbd4e2; font-size: .82rem; font-weight: 700; }
-    input, select { width: 100%; min-height: 46px; border: 1px solid var(--border); border-radius: 11px; padding: 0 13px; background: #0e131d; color: var(--text); outline: none; }
-    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #8b7cff22; }
-    .form-grid { grid-template-columns: minmax(0, 2fr) minmax(160px, .8fr) auto; align-items: end; }
-    .button { min-height: 46px; border: 0; border-radius: 11px; padding: 0 18px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; font-weight: 800; cursor: pointer; transition: transform .15s, opacity .15s; }
-    .button:hover { transform: translateY(-1px); }
-    .button:disabled { cursor: wait; opacity: .6; transform: none; }
-    .button.copy { width: 100%; margin-top: 16px; background: linear-gradient(135deg, #258e76, #176c65); }
-    .status { display: none; margin-top: 15px; padding: 12px 14px; border-radius: 11px; font-size: .88rem; line-height: 1.45; }
-    .status.show { display: block; }
-    .status.error { color: #ffd0d0; background: #54252b66; border: 1px solid #a74752; }
-    .status.success { color: #c8ffeb; background: #174d3c66; border: 1px solid #287d61; }
-    .results { display: none; } .results.visible { display: block; }
-    .profile-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
-    .profile-name { margin: 0; font-size: 1.35rem; }
-    .handle { color: #b6adff; margin-top: 4px; }
-    .bio { color: #c0cad8; white-space: pre-wrap; line-height: 1.55; margin: 16px 0 0; overflow-wrap: anywhere; }
-    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
-    .metric { background: var(--surface-2); border: 1px solid var(--border); border-radius: 13px; padding: 15px; min-width: 0; }
-    .metric span { display: block; color: var(--muted); font-size: .76rem; margin-bottom: 8px; }
-    .metric strong { font-size: clamp(1.1rem, 2.6vw, 1.55rem); letter-spacing: -.03em; overflow-wrap: anywhere; }
-    .section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 26px 0 13px; }
-    .section-title h3 { margin: 0; font-size: 1rem; }
-    .post-list { display: grid; gap: 10px; }
-    .post { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 13px; padding: 15px; }
-    .post-top { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 7px; }
-    .tag { font-size: .68rem; font-weight: 800; color: #d9d3ff; background: #393363; border-radius: 999px; padding: 4px 8px; }
-    .post-date, .post-stats { color: var(--muted); font-size: .78rem; }
-    .caption { color: #d4dce8; font-size: .88rem; line-height: 1.45; overflow-wrap: anywhere; }
-    .post-stats { display: flex; gap: 12px; margin-top: 9px; flex-wrap: wrap; }
-    a { color: #b9b0ff; font-weight: 750; text-decoration: none; align-self: center; white-space: nowrap; }
-    a:hover { text-decoration: underline; }
-    .empty { color: var(--muted); text-align: center; padding: 22px; border: 1px dashed var(--border); border-radius: 12px; }
-    footer { text-align: center; color: #738096; font-size: .76rem; padding-top: 20px; }
-    @media (max-width: 760px) {
-      .form-grid { grid-template-columns: 1fr 1fr; }
-      .form-grid .field:first-child, .form-grid button { grid-column: 1 / -1; }
-      .form-grid button { width: 100%; }
-      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 520px) {
-      .shell { width: min(100% - 22px, 1120px); padding-top: 24px; }
-      header { align-items: flex-start; flex-direction: column; }
-      .panel { padding: 17px; } .config-grid, .form-grid { grid-template-columns: 1fr; }
-      .form-grid .field:first-child, .form-grid button { grid-column: auto; }
-      .post { grid-template-columns: 1fr; } .post a { justify-self: start; }
-      .profile-head { flex-direction: column; }
-    }
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10131b">
+<meta name="description" content="Radar Social DEAB — análise estratégica de Instagram com Gemini.">
+<title>Radar Social DEAB — Homologação</title>
+<style>
+:root{color-scheme:dark;--bg:#0c0f16;--surface:#141925;--surface2:#1b2230;--border:#293244;--text:#edf2fa;--muted:#9ba8bb;--accent:#8b7cff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#1b2140 0,var(--bg) 42rem);color:var(--text)}
+button,input,select,textarea{font:inherit}.shell{width:min(1160px,calc(100% - 32px));margin:auto;padding:34px 0 60px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}.eyebrow{color:#b6adff;font-size:.75rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}h1{margin:7px 0 0;font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.045em}
+.environment,.tag{border:1px solid #554b9a;background:#28234c;color:#d7d1ff;border-radius:999px;padding:7px 11px;font-size:.75rem;font-weight:800}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:21px;margin-bottom:16px;box-shadow:0 18px 55px #0002}.panel h2{margin:0 0 6px;font-size:1.08rem}.sub{color:var(--muted);margin:0 0 17px;font-size:.9rem;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.field{display:flex;flex-direction:column;gap:7px;min-width:0}.field.full{grid-column:1/-1}label{font-size:.82rem;color:#cbd4e2;font-weight:750}
+input,textarea{width:100%;min-height:45px;border:1px solid var(--border);border-radius:11px;padding:11px 13px;background:#0e131d;color:var(--text);outline:none}textarea{min-height:75px;resize:vertical}input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px #8b7cff22}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.button{min-height:46px;border:0;border-radius:11px;padding:0 18px;background:linear-gradient(135deg,#8b7cff,#6b5ce7);color:white;font-weight:800;cursor:pointer}.button:disabled{opacity:.6;cursor:wait}.button.copy{width:100%;margin-top:16px;background:linear-gradient(135deg,#258e76,#176c65)}
+.status{display:none;margin-top:14px;padding:12px 14px;border-radius:11px;font-size:.88rem;line-height:1.45}.status.show{display:block}.status.error{color:#ffd0d0;background:#54252b66;border:1px solid #a74752}.status.success{color:#c8ffeb;background:#174d3c66;border:1px solid #287d61}
+.results{display:none}.results.visible{display:block}.profile-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.profile-name{margin:0;font-size:1.35rem}.handle{color:#b6adff;margin-top:4px}.bio{white-space:pre-wrap;color:#c0cad8;line-height:1.55;overflow-wrap:anywhere;margin:12px 0}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-top:17px}.metric{background:var(--surface2);border:1px solid var(--border);border-radius:13px;padding:14px}.metric span{display:block;color:var(--muted);font-size:.76rem;margin-bottom:7px}.metric strong{font-size:1.35rem;overflow-wrap:anywhere}
+.block{margin-top:16px;padding:18px;border:1px solid var(--border);background:#111722;border-radius:14px}.block h3{margin:0 0 12px;font-size:1rem}.block h4{margin:14px 0 7px;font-size:.88rem;color:#c9c1ff}.block ul{padding-left:20px;margin:7px 0;color:#d1d9e6;line-height:1.6}.muted{color:var(--muted)}.competitor-grid,.post-grid,.ideas-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.competitor,.post-card,.idea{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px;min-width:0}.post-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.thumb{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:9px;background:#0b1018;margin-bottom:9px}.thumb-placeholder{aspect-ratio:4/3;display:grid;place-items:center;border-radius:9px;background:#0b1018;color:var(--muted);margin-bottom:9px}
+.post-card p,.idea p{font-size:.84rem;line-height:1.5;color:#d1d9e6;overflow-wrap:anywhere}.post-card a,.competitor a{color:#b9b0ff;text-decoration:none;font-weight:750}.post-meta{font-size:.75rem;color:var(--muted);margin:7px 0}.pill{display:inline-block;background:#393363;color:#ded8ff;border-radius:999px;padding:4px 8px;font-size:.68rem;font-weight:800;margin:2px}
+footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}
+@media(max-width:760px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.shell{width:calc(100% - 22px);padding-top:22px}header{align-items:flex-start;flex-direction:column}.panel{padding:16px}.grid,.form-grid,.competitor-grid,.ideas-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.post-grid{grid-template-columns:1fr}.profile-head{flex-direction:column}}
+</style>
 </head>
-<body>
-  <main class="shell">
-    <header>
-      <div><div class="eyebrow">DEAB · Inteligência social</div><h1>Radar Social DEAB</h1></div>
-      <span class="environment">🧪 Homologação</span>
-    </header>
-
-    <section class="panel" aria-labelledby="config-title">
-      <h2 id="config-title">Conexão Supabase</h2>
-      <p class="sub">As credenciais públicas do projeto ficam salvas somente neste navegador. Nunca informe aqui a Service Role Key.</p>
-      <div class="config-grid">
-        <div class="field"><label for="supabaseUrl">SUPABASE_URL</label><input id="supabaseUrl" type="url" placeholder="https://seu-projeto.supabase.co" autocomplete="url"></div>
-        <div class="field"><label for="supabaseAnonKey">SUPABASE_ANON_KEY</label><input id="supabaseAnonKey" type="password" placeholder="Chave anon/public" autocomplete="off"></div>
-      </div>
-    </section>
-
-    <section class="panel" aria-labelledby="analysis-title">
-      <h2 id="analysis-title">Análise rápida de Instagram</h2>
-      <p class="sub">Consulte uma conta profissional pública do Instagram (Business ou Creator).</p>
-      <form id="analysisForm" class="form-grid">
-        <div class="field"><label for="username">Perfil do Instagram</label><input id="username" type="text" placeholder="@chicteira_cosmeticos" maxlength="31" required></div>
-        <div class="field"><label for="category">Categoria</label><select id="category"><option value="cliente">Cliente</option><option value="proprio">Próprio</option><option value="concorrente">Concorrente</option></select></div>
-        <button class="button" id="analyzeButton" type="submit">Analisar Perfil Agora</button>
-      </form>
-      <div id="status" class="status" role="status" aria-live="polite"></div>
-    </section>
-
-    <section id="results" class="results">
-      <section class="panel">
-        <div class="profile-head"><div><h2 class="profile-name" id="profileName">—</h2><div class="handle" id="profileUsername"></div></div><span class="tag" id="profileCategory"></span></div>
-        <p class="bio" id="profileBio"></p>
-        <div class="metrics">
-          <div class="metric"><span>Seguidores</span><strong id="followers">—</strong></div>
-          <div class="metric"><span>Total de posts</span><strong id="mediaCount">—</strong></div>
-          <div class="metric"><span>Média de curtidas</span><strong id="avgLikes">—</strong></div>
-          <div class="metric"><span>Engajamento médio</span><strong id="avgEngagement">—</strong></div>
-        </div>
-        <div class="section-title"><h3>Últimos posts coletados</h3><span class="post-date" id="sampleCount"></span></div>
-        <div id="postsList" class="post-list"></div>
-        <button class="button copy" id="copySummary" type="button">Copiar Resumo para Gemini (estrategista-dalea-ai)</button>
-        <div id="copyStatus" class="status" role="status" aria-live="polite"></div>
-      </section>
-    </section>
-    <footer>Radar Social DEAB · Ambiente de Testes / Supabase</footer>
-  </main>
-
-  <script>
-    "use strict";
-    const STORAGE_KEYS = { url: "radar_social_supabase_url", anon: "radar_social_supabase_anon_key" };
-    const el = {
-      url: document.getElementById("supabaseUrl"), anon: document.getElementById("supabaseAnonKey"),
-      form: document.getElementById("analysisForm"), username: document.getElementById("username"),
-      category: document.getElementById("category"), analyze: document.getElementById("analyzeButton"),
-      status: document.getElementById("status"), results: document.getElementById("results"),
-      copy: document.getElementById("copySummary"), copyStatus: document.getElementById("copyStatus"),
-      posts: document.getElementById("postsList")
-    };
-    let latestResult = null;
-
-    el.url.value = localStorage.getItem(STORAGE_KEYS.url) || "";
-    el.anon.value = localStorage.getItem(STORAGE_KEYS.anon) || "";
-    el.url.addEventListener("input", () => localStorage.setItem(STORAGE_KEYS.url, el.url.value.trim()));
-    el.anon.addEventListener("input", () => localStorage.setItem(STORAGE_KEYS.anon, el.anon.value.trim()));
-
-    function showStatus(target, message, type) {
-      target.textContent = message;
-      target.className = "status show " + type;
-    }
-    function formatNumber(value) {
-      return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(Number(value || 0));
-    }
-    function formatPercent(value) {
-      return Number(value || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
-    }
-    function formatDate(value) {
-      if (!value) return "Data não informada";
-      const date = new Date(value);
-      return Number.isNaN(date.getTime()) ? "Data não informada" : date.toLocaleString("pt-BR");
-    }
-    function safeText(value, fallback = "Não informado") {
-      return value === null || value === undefined || value === "" ? fallback : String(value);
-    }
-
-    function renderPosts(posts) {
-      el.posts.replaceChildren();
-      if (!posts || !posts.length) {
-        const empty = document.createElement("div");
-        empty.className = "empty";
-        empty.textContent = "A API não retornou publicações para este perfil.";
-        el.posts.appendChild(empty);
-        return;
-      }
-      posts.forEach((post) => {
-        const article = document.createElement("article");
-        article.className = "post";
-        const content = document.createElement("div");
-        const top = document.createElement("div");
-        top.className = "post-top";
-        const type = document.createElement("span");
-        type.className = "tag";
-        type.textContent = safeText(post.media_type, "POST");
-        const date = document.createElement("span");
-        date.className = "post-date";
-        date.textContent = formatDate(post.timestamp);
-        top.append(type, date);
-        const caption = document.createElement("div");
-        caption.className = "caption";
-        const rawCaption = safeText(post.caption, "Sem legenda");
-        caption.textContent = rawCaption.length > 240 ? rawCaption.slice(0, 240) + "…" : rawCaption;
-        const stats = document.createElement("div");
-        stats.className = "post-stats";
-        const likes = document.createElement("span"); likes.textContent = "♥ " + formatNumber(post.like_count);
-        const comments = document.createElement("span"); comments.textContent = "◌ " + formatNumber(post.comments_count) + " comentários";
-        const rate = document.createElement("span"); rate.textContent = "Engajamento: " + formatPercent(post.engagement_rate);
-        stats.append(likes, comments, rate);
-        content.append(top, caption, stats);
-        article.appendChild(content);
-        if (post.permalink && /^https:\/\/(www\.)?instagram\.com\//i.test(post.permalink)) {
-          const link = document.createElement("a");
-          link.href = post.permalink; link.target = "_blank"; link.rel = "noopener noreferrer";
-          link.textContent = "Ver publicação ↗"; article.appendChild(link);
-        }
-        el.posts.appendChild(article);
-      });
-    }
-
-    function renderResult(data) {
-      const p = data.profile, m = data.metrics_summary || {};
-      document.getElementById("profileName").textContent = safeText(p.name, p.username);
-      document.getElementById("profileUsername").textContent = "@" + safeText(p.username, "");
-      document.getElementById("profileCategory").textContent = safeText(p.category).toUpperCase();
-      document.getElementById("profileBio").textContent = safeText(p.biography, "Este perfil não possui biografia pública.");
-      document.getElementById("followers").textContent = formatNumber(p.followers_count);
-      document.getElementById("mediaCount").textContent = formatNumber(p.media_count);
-      document.getElementById("avgLikes").textContent = formatNumber(m.average_likes);
-      document.getElementById("avgEngagement").textContent = formatPercent(m.avg_engagement_rate);
-      document.getElementById("sampleCount").textContent = (m.posts_sampled || 0) + " posts analisados";
-      renderPosts(data.posts || []);
-      el.results.classList.add("visible");
-    }
-
-    el.form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const supabaseUrl = el.url.value.trim().replace(/\/+$/, "");
-      const anonKey = el.anon.value.trim();
-      const username = el.username.value.trim().replace(/^@+/, "");
-      if (!supabaseUrl || !/^https:\/\/[a-z0-9.-]+$/i.test(supabaseUrl)) {
-        showStatus(el.status, "Informe uma SUPABASE_URL válida (https://...).", "error"); el.url.focus(); return;
-      }
-      if (!anonKey) { showStatus(el.status, "Informe a SUPABASE_ANON_KEY do projeto.", "error"); el.anon.focus(); return; }
-      if (!username) { showStatus(el.status, "Informe o username do Instagram.", "error"); el.username.focus(); return; }
-
-      localStorage.setItem(STORAGE_KEYS.url, supabaseUrl);
-      localStorage.setItem(STORAGE_KEYS.anon, anonKey);
-      el.analyze.disabled = true; el.analyze.textContent = "Coletando dados…";
-      el.results.classList.remove("visible"); el.copyStatus.className = "status";
-
-      try {
-        const response = await fetch(supabaseUrl + "/functions/v1/coletar-instagram", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "apikey": anonKey, "Authorization": "Bearer " + anonKey },
-          body: JSON.stringify({ username, category: el.category.value })
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          const details = [data.error, data.hint, data.detail].filter(Boolean).join(" ");
-          throw new Error(details || "A função retornou HTTP " + response.status + ".");
-        }
-        if (!data.profile || !data.metrics_summary) throw new Error("A resposta da função não contém os dados esperados.");
-        latestResult = data;
-        renderResult(data);
-        showStatus(el.status, "Perfil @" + data.profile.username + " coletado e salvo com sucesso.", "success");
-      } catch (error) {
-        showStatus(el.status, error.message || "Não foi possível concluir a análise.", "error");
-      } finally {
-        el.analyze.disabled = false; el.analyze.textContent = "Analisar Perfil Agora";
-      }
-    });
-
-    function postLines(posts) {
-      if (!posts || !posts.length) return "Nenhum post disponível.";
-      return posts.map((post, index) => [
-        (index + 1) + ". " + (post.media_type || "POST") + " | " + formatDate(post.timestamp),
-        "Engajamento: " + formatPercent(post.engagement_rate),
-        "Curtidas: " + formatNumber(post.like_count) + " | Comentários: " + formatNumber(post.comments_count),
-        "Legenda: " + safeText(post.caption, "Sem legenda"),
-        "Link: " + safeText(post.permalink, "Não disponível")
-      ].join("\n")).join("\n\n");
-    }
-
-    function buildGeminiSummary(data) {
-      const p = data.profile, m = data.metrics_summary;
-      return [
-        "RADAR SOCIAL DEAB — BRIEFING PARA AUDITORIA DE INSTAGRAM", "",
-        "INSTRUÇÃO",
-        "Atue como estrategista de redes sociais. Com base nos dados abaixo, produza uma auditoria estratégica do perfil, identifique oportunidades orgânicas, proponha um calendário editorial e crie ideias de roteiros para Reels. Separe fatos observados de hipóteses e não invente métricas.", "",
-        "PERFIL",
-        "Nome: " + safeText(p.name, p.username), "Username: @" + p.username,
-        "Categoria monitorada: " + p.category, "Biografia: " + safeText(p.biography, "Sem biografia"),
-        "Seguidores: " + formatNumber(p.followers_count),
-        "Total de publicações informado pelo Instagram: " + formatNumber(p.media_count), "",
-        "MÉTRICAS DA AMOSTRA",
-        "Publicações analisadas: " + (m.posts_sampled || 0),
-        "Média de curtidas por post: " + formatNumber(m.average_likes),
-        "Média de comentários por post: " + formatNumber(m.average_comments),
-        "Taxa média de engajamento por post: " + formatPercent(m.avg_engagement_rate),
-        "Observação: taxa calculada por ((curtidas + comentários) / posts da amostra) / seguidores × 100.", "",
-        "TOP 3 POSTS POR ENGAJAMENTO", postLines(m.top_posts), "",
-        "3 POSTS DE MENOR ENGAJAMENTO NA AMOSTRA", postLines(m.worst_posts), "",
-        "TODOS OS POSTS COLETADOS (até 20)", postLines(data.posts), "",
-        "ENTREGÁVEIS SOLICITADOS",
-        "1. Auditoria do posicionamento, bio, conteúdo, formatos e engajamento.",
-        "2. Pontos fortes, pontos fracos e oportunidades prioritárias.",
-        "3. Calendário editorial sugerido para 30 dias, com formato, tema, objetivo e CTA.",
-        "4. Roteiros práticos para vídeos/Reels, com gancho, desenvolvimento e chamada para ação.",
-        "5. Recomendações para crescimento orgânico e, se fizer sentido, hipóteses de campanhas pagas."
-      ].join("\n");
-    }
-
-    el.copy.addEventListener("click", async () => {
-      if (!latestResult) return;
-      const text = buildGeminiSummary(latestResult);
-      try {
-        await navigator.clipboard.writeText(text);
-        showStatus(el.copyStatus, "Resumo completo copiado. Agora é só colar na competência estrategista-dalea-ai do Gemini.", "success");
-      } catch {
-        const area = document.createElement("textarea");
-        area.value = text; area.style.position = "fixed"; area.style.opacity = "0";
-        document.body.appendChild(area); area.select();
-        const copied = document.execCommand("copy"); area.remove();
-        showStatus(el.copyStatus, copied ? "Resumo copiado para a área de transferência." : "Não foi possível copiar automaticamente neste navegador.", copied ? "success" : "error");
-      }
-    });
-  </script>
-</body>
-</html>
+<body><main class="shell">
+<header><div><div class="eyebrow">DEAB · Inteligência social</div><h1>Radar Social DEAB</h1></div><span class="environment">🧪 Homologação</span></header>
+<section class="panel"><h2>Conexão Supabase</h2><p class="sub">Informe as credenciais públicas do projeto. Nunca coloque a Service Role Key no navegador.</p>
+<div class="grid"><div class="field"><label for="supabaseUrl">SUPABASE_URL</label><input id="supabaseUrl" type="url" placeholder="https://seu-projeto.supabase.co"></div><div class="field"><label for="supabaseAnonKey">SUPABASE_ANON_KEY</label><input id="supabaseAnonKey" type="password" placeholder="Chave anon/public" autocomplete="off"></div></div></section>
+<section class="panel"><h2>Análise estratégica de Instagram</h2><p class="sub">Colete o perfil principal, compare até três referências e receba diagnóstico com Gemini quando a secret GEMINI_API_KEY estiver configurada.</p>
+<form id="analysisForm" class="form-grid">
+<div class="field"><label for="username">Perfil Principal (@)</label><input id="username" maxlength="31" placeholder="@seu_perfil" required></div>
+<div class="field"><label for="category">Categoria</label><select id="category"><option value="cliente">Cliente</option><option value="proprio">Próprio</option><option value="concorrente">Concorrente</option></select></div>
+<div class="field full"><label for="competitors">Concorrentes / Referências do Nicho (até 3 @ separados por vírgula)</label><input id="competitors" placeholder="@perfil1, @perfil2, @perfil3"></div>
+<div class="field full"><label for="nicheContext">Nicho e Cidade / Objetivo</label><textarea id="nicheContext" placeholder="Ex.: estética em Cantagalo/RJ; atrair clientes locais e aumentar pedidos de orçamento."></textarea></div>
+<div class="field full"><button id="analyzeButton" class="button" type="submit">Analisar Perfil e Concorrentes</button></div>
+</form><div id="status" class="status" role="status" aria-live="polite"></div></section>
+<section id="results" class="results">
+<section class="panel"><div class="profile-head"><div><h2 id="profileName" class="profile-name">—</h2><div id="profileUsername" class="handle"></div></div><span id="aiBadge" class="tag">ANÁLISE</span></div><p id="profileBio" class="bio"></p><div class="muted" id="profileLink"></div>
+<div class="metrics"><div class="metric"><span>Seguidores</span><strong id="followers">—</strong></div><div class="metric"><span>Publicações</span><strong id="mediaCount">—</strong></div><div class="metric"><span>Média de curtidas</span><strong id="avgLikes">—</strong></div><div class="metric"><span>Engajamento médio</span><strong id="avgEngagement">—</strong></div></div></section>
+<section class="panel"><h2>Diagnóstico da Bio e Link</h2><div id="bioAnalysis" class="block"><p class="muted">Aguardando análise.</p></div></section>
+<section class="panel"><h2>Comparativo com o Nicho</h2><div id="nicheAnalysis" class="block"><p class="muted">Aguardando análise.</p></div></section>
+<section class="panel"><h2>Análise Visual e de Conteúdo</h2><div id="visualAnalysis" class="block"><p class="muted">Aguardando análise.</p></div><div class="block"><h3>Publicações coletadas e miniaturas</h3><div id="postsList" class="post-grid"></div></div></section>
+<section class="panel"><h2>Sugestões Práticas de Posts e Roteiros de Reels</h2><div id="ideasAnalysis" class="ideas-grid"></div><button id="copySummary" class="button copy" type="button">Copiar Briefing Completo para Gemini</button><div id="copyStatus" class="status" role="status" aria-live="polite"></div></section>
+</section><footer>Radar Social DEAB · Ambiente de Testes / Supabase</footer></main>
+<script>
+"use strict";
+const KEYS={url:"radar_social_supabase_url",anon:"radar_social_supabase_anon_key"};
+const $=id=>document.getElementById(id);
+const el={url:$("supabaseUrl"),anon:$("supabaseAnonKey"),form:$("analysisForm"),username:$("username"),competitors:$("competitors"),context:$("nicheContext"),category:$("category"),button:$("analyzeButton"),status:$("status"),results:$("results"),copy:$("copySummary"),copyStatus:$("copyStatus")};
+let latest=null;
+el.url.value=localStorage.getItem(KEYS.url)||"";el.anon.value=localStorage.getItem(KEYS.anon)||"";
+el.url.addEventListener("input",()=>localStorage.setItem(KEYS.url,el.url.value.trim()));
+el.anon.addEventListener("input",()=>localStorage.setItem(KEYS.anon,el.anon.value.trim()));
+const number=v=>new Intl.NumberFormat("pt-BR",{maximumFractionDigits:1}).format(Number(v||0));
+const percent=v=>Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
+const safe=(v,f="Não informado")=>v===null||v===undefined||v===""?f:String(v);
+function status(target,msg,type){target.textContent=msg;target.className="status show "+type;}
+function node(tag,text,className){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(className)n.className=className;return n;}
+function addList(parent,title,items){const h=node("h4",title);parent.append(h);const list=node("ul");(items||[]).forEach(x=>list.append(node("li",String(x))));if(!items?.length)list.append(node("li","Não informado pela análise."));parent.append(list);}
+function validInstagramUrl(value){try{const u=new URL(value);return u.protocol==="https:"&&/(^|\.)instagram\.com$/i.test(u.hostname);}catch{return false;}}
+function createPostCard(post){
+ const card=node("article",undefined,"post-card");
+ const imageUrl=post.media_url||(post.children||[]).find(x=>x.media_url)?.media_url;
+ if(imageUrl){try{const u=new URL(imageUrl);if(u.protocol==="https:"){const img=node("img");img.className="thumb";img.src=u.href;img.alt="Miniatura da publicação";img.loading="lazy";img.referrerPolicy="no-referrer";img.onerror=()=>{img.replaceWith(node("div","Miniatura indisponível","thumb-placeholder"));};card.append(img);}else card.append(node("div","Miniatura indisponível","thumb-placeholder"));}catch{card.append(node("div","Miniatura indisponível","thumb-placeholder"));}}
+ else card.append(node("div","A API não forneceu URL da mídia","thumb-placeholder"));
+ card.append(node("span",safe(post.media_type,"POST"),"pill"));
+ card.append(node("div",number(post.like_count)+" curtidas · "+number(post.comments_count)+" comentários","post-meta"));
+ card.append(node("p",safe(post.caption,"Sem legenda").slice(0,220)));
+ if(post.permalink&&validInstagramUrl(post.permalink)){const a=node("a","Ver publicação ↗");a.href=post.permalink;a.target="_blank";a.rel="noopener noreferrer";card.append(a);}
+ return card;
+}
+function renderPosts(posts){const target=$("postsList");target.replaceChildren();if(!posts?.length){target.append(node("p","Nenhum post retornado.","muted"));return;}posts.forEach(p=>target.append(createPostCard(p)));}
+function renderAI(ai,data){
+ const bio=$("bioAnalysis"),niche=$("nicheAnalysis"),visual=$("visualAnalysis"),ideas=$("ideasAnalysis");
+ [bio,niche,visual,ideas].forEach(x=>x.replaceChildren());
+ if(!ai){
+  bio.append(node("p","Análise por IA não disponível. Os dados coletados estão apresentados; configure GEMINI_API_KEY nos secrets da Edge Function para gerar diagnóstico estratégico.","muted"));
+  niche.append(node("p",(data.competitors||[]).length+" perfil(is) de referência coletado(s). Configure Gemini para receber comparação estratégica.","muted"));
+  visual.append(node("p","As miniaturas e métricas dos posts estão abaixo. A análise interpretativa requer GEMINI_API_KEY.","muted"));
+  ideas.append(node("p","Configure GEMINI_API_KEY para gerar sugestões personalizadas de posts e roteiros de Reels.","muted"));
+  return;
+ }
+ const b=ai.auditoria_bio||{};addList(bio,"Pontos fortes",b.pontos_fortes);addList(bio,"Melhorias recomendadas",b.melhorias);
+ (b.sugestoes_bio||[]).forEach((s,i)=>{bio.append(node("h4","Sugestão de bio "+(i+1)));bio.append(node("p",s));});
+ const comps=ai.comparativo_nicho||[];
+ if(!comps.length)niche.append(node("p","Nenhum comparativo retornado. Informe concorrentes para enriquecer a análise.","muted"));
+ comps.forEach(c=>{const card=node("article",undefined,"competitor");card.append(node("h4","@"+safe(c.username)));addList(card,"Pontos fortes",c.pontos_fortes);addList(card,"Oportunidades",c.oportunidades);addList(card,"Diferenças observadas",c.diferencas_observadas);niche.append(card);});
+ const v=ai.analise_visual_conteudo||{};addList(visual,"Padrões visuais",v.padroes_visuais);addList(visual,"Formatos e temas",v.formatos_e_temas);addList(visual,"Oportunidades",v.oportunidades);addList(visual,"Observações sobre as imagens",v.observacoes_imagens);
+ (ai.ideias_posts_reels||[]).forEach((idea,i)=>{const card=node("article",undefined,"idea");card.append(node("span",idea.formato||"Conteúdo","pill"));card.append(node("h4",(i+1)+". "+safe(idea.tema)));card.append(node("p","Gancho: "+safe(idea.gancho)));addList(card,"Roteiro",idea.roteiro);card.append(node("p","CTA: "+safe(idea.cta)));card.append(node("p","Objetivo: "+safe(idea.objetivo)));ideas.append(card);});
+ if(!ideas.childElementCount)ideas.append(node("p","Nenhuma ideia retornada.","muted"));
+}
+function render(data){
+ const p=data.profile,m=data.metrics_summary||{};
+ $("profileName").textContent=safe(p.name,p.username);$("profileUsername").textContent="@"+p.username;
+ $("profileBio").textContent=safe(p.biography,"Perfil sem bio pública.");
+ $("profileLink").textContent="Link: "+safe(p.website,"não informado");
+ $("followers").textContent=number(p.followers_count);$("mediaCount").textContent=number(p.media_count);
+ $("avgLikes").textContent=number(m.average_likes);$("avgEngagement").textContent=percent(m.avg_engagement_rate);
+ $("aiBadge").textContent=data.ai_analysis?"GEMINI · ANÁLISE COMPLETA":"COLETA · SEM GEMINI";
+ renderAI(data.ai_analysis,data);renderPosts(data.posts||[]);$("results").classList.add("visible");
+}
+function lines(posts){return (posts||[]).map((p,i)=>[(i+1)+". "+safe(p.media_type,"POST")+" | "+safe(p.timestamp), "Engajamento: "+percent(p.engagement_rate),"Curtidas: "+number(p.like_count)+" | Comentários: "+number(p.comments_count),"Legenda: "+safe(p.caption,"Sem legenda"),"Imagem: "+safe(p.media_url,"não fornecida"),"Link: "+safe(p.permalink,"não disponível")].join("\n")).join("\n\n")||"Sem publicações.";}
+function briefing(d){return ["RADAR SOCIAL DEAB — BRIEFING E AUDITORIA DE INSTAGRAM","","CONTEXTO: "+safe(d.niche_context,"Não informado"),"PERFIL PRINCIPAL: @"+d.profile.username,"Nome: "+safe(d.profile.name),"Bio: "+safe(d.profile.biography),"Link: "+safe(d.profile.website),"Seguidores: "+number(d.profile.followers_count),"Posts: "+number(d.profile.media_count),"Média curtidas: "+number(d.metrics_summary.average_likes),"Média comentários: "+number(d.metrics_summary.average_comments),"Engajamento médio: "+percent(d.metrics_summary.avg_engagement_rate),"","CONCORRENTES / REFERÊNCIAS",JSON.stringify(d.competitors||[],null,2),"","ANÁLISE GEMINI",JSON.stringify(d.ai_analysis||{status:"Não configurada",warning:d.ai_warning||"GEMINI_API_KEY ausente"},null,2),"","TOP POSTS",lines(d.metrics_summary.top_posts),"","POSTS DE MENOR ENGAJAMENTO",lines(d.metrics_summary.worst_posts),"","TODOS OS POSTS",lines(d.posts),"","INSTRUÇÃO: Separe fatos de hipóteses. A partir dos dados, refine o posicionamento, calendário editorial de 30 dias, ideias de posts, roteiros de Reels, CTAs e oportunidades orgânicas. Não invente métricas."].join("\n");}
+el.form.addEventListener("submit",async ev=>{
+ ev.preventDefault();const base=el.url.value.trim().replace(/\/+$/,""),key=el.anon.value.trim(),username=el.username.value.trim().replace(/^@+/,"");
+ const competitors=el.competitors.value.split(",").map(x=>x.trim().replace(/^@+/,"")).filter(Boolean);
+ if(!/^https:\/\/[a-z0-9.-]+$/i.test(base)){status(el.status,"Informe uma SUPABASE_URL válida (https://...).","error");return;}
+ if(!key){status(el.status,"Informe a SUPABASE_ANON_KEY.","error");return;}
+ if(!/^[a-zA-Z0-9._]{1,30}$/.test(username)){status(el.status,"Informe um @username principal válido.","error");return;}
+ if(competitors.length>3){status(el.status,"Informe no máximo 3 concorrentes/referências.","error");return;}
+ localStorage.setItem(KEYS.url,base);localStorage.setItem(KEYS.anon,key);
+ el.button.disabled=true;el.button.textContent="Coletando e analisando…";el.results.classList.remove("visible");
+ try{
+  const response=await fetch(base+"/functions/v1/coletar-instagram",{method:"POST",headers:{"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key},body:JSON.stringify({username,category:el.category.value,competitors,niche_context:el.context.value.trim()})});
+  const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error([data.error,data.hint,data.detail].filter(Boolean).join(" ")||"Erro HTTP "+response.status);
+  if(!data.profile||!data.metrics_summary)throw new Error("Resposta sem os dados esperados.");
+  latest={...data,niche_context:el.context.value.trim()};render(latest);
+  status(el.status,data.ai_analysis?"Coleta e análise Gemini concluídas.":"Coleta concluída. "+(data.ai_warning||"Gemini não configurado; exibindo dados coletados."),"success");
+ }catch(e){status(el.status,e.message||"Falha na análise.","error");}
+ finally{el.button.disabled=false;el.button.textContent="Analisar Perfil e Concorrentes";}
+});
+el.copy.addEventListener("click",async()=>{if(!latest)return;const text=briefing(latest);try{await navigator.clipboard.writeText(text);status(el.copyStatus,"Briefing completo copiado.","success");}catch{const t=node("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";document.body.append(t);t.select();const ok=document.execCommand("copy");t.remove();status(el.copyStatus,ok?"Briefing copiado.":"Não foi possível copiar neste navegador.",ok?"success":"error");}});
+</script></body></html>
