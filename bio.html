@@ -9,8 +9,8 @@
 const SUPABASE_URL="https://ywybqrunxreaencndztg.supabase.co",SUPABASE_KEY="sb_publishable_3MB32qjyJD1IMrUHC9KEzA_t2e5L-tP";
 const slug=(new URLSearchParams(location.search).get("u")||decodeURIComponent(location.pathname.split("/").filter(Boolean).pop()||"")).trim().toLowerCase();
 const initials=s=>String(s||"?").trim().split(/\s+/).slice(0,2).map(x=>Array.from(x)[0]||"").join("").toUpperCase()||"?";
-const safeUrl=s=>{try{const u=new URL(s);return ["https:","http:"].includes(u.protocol)?u.href:null}catch{return null}};
-const icons={whatsapp:"💬",instagram:"◎",maps:"📍",website:"🌐",catalog:"▤",phone:"☎",email:"✉",link:"↗"};
+const safeUrl=(s,type)=>{try{const u=new URL(s);if(["https:","http:"].includes(u.protocol))return u.href;if(type==="email"&&u.protocol==="mailto:")return u.href;if(type==="telefone"&&u.protocol==="tel:")return u.href;return null}catch{return null}};
+const icons={whatsapp:"💬",site:"🌐",website:"🌐",catalog:"▤",instagram:"◎",facebook:"f",linkedin:"in",youtube:"▶",tiktok:"♪",maps:"📍",email:"✉",telefone:"☎",phone:"☎",link:"↗"};
 async function run(){
  if(!/^[a-z0-9][a-z0-9-]{0,48}[a-z0-9]$|^[a-z0-9]{2,50}$/.test(slug))throw Error("Endereço do cartão inválido.");
  const rows=window.__BIO_DATA__?[window.__BIO_DATA__]:await (async()=>{const response=await fetch(SUPABASE_URL+"/rest/v1/bio_pages?select=slug,username,display_name,tagline,avatar_url,theme_preset,accent_color,buttons,libras_video_url,active&slug=eq."+encodeURIComponent(slug)+"&active=eq.true&limit=1",{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY,"Accept-Profile":"social_analytics"}});const result=await response.json().catch(()=>[]);if(!response.ok)throw Error(result.message||"Falha ao consultar o cartão.");return result;})();if(!rows.length)throw Error("Cartão não encontrado ou inativo.");
@@ -20,7 +20,7 @@ async function run(){
  if(avatar.tagName==="IMG"){avatar.src=d.avatar_url;avatar.alt="Foto de "+(d.display_name||d.username);avatar.onerror=()=>{const f=document.createElement("div");f.className="avatar initials";f.textContent=initials(d.display_name||d.username);avatar.replaceWith(f)};}else avatar.textContent=initials(d.display_name||d.username);card.append(avatar);
  const h=document.createElement("h1");h.textContent=d.display_name||"@"+d.username;card.append(h);
  if(d.tagline){const p=document.createElement("p");p.className="tagline";p.textContent=d.tagline;card.append(p)}
- const links=document.createElement("div");links.className="links";(Array.isArray(d.buttons)?d.buttons:[]).forEach(b=>{const url=safeUrl(b.url);if(!url||!b.label)return;const a=document.createElement("a");a.className="link";a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=(icons[b.type]||"↗")+" "+b.label;links.append(a)});card.append(links);
+ const links=document.createElement("div");links.className="links";(Array.isArray(d.buttons)?d.buttons:[]).forEach(b=>{const url=safeUrl(b.url,b.type);if(!url||!b.label)return;const a=document.createElement("a");a.className="link";a.href=url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=(icons[b.type]||"↗")+" "+b.label;links.append(a)});card.append(links);
  const video=safeUrl(d.libras_video_url||"");if(video){const sec=document.createElement("section");sec.className="libras";const title=document.createElement("h2");title.textContent="🤟 Apresentação em LIBRAS";sec.append(title);if(/youtube\.com\/embed\/|player\.vimeo\.com\/video\//i.test(video)){const frame=document.createElement("iframe");frame.src=video;frame.title="Vídeo em LIBRAS";frame.loading="lazy";frame.allowFullscreen=true;sec.append(frame)}else{const a=document.createElement("a");a.href=video;a.target="_blank";a.rel="noopener noreferrer";a.textContent="▶ Assistir ao vídeo em LIBRAS";sec.append(a)}card.append(sec)}
  document.getElementById("footer").hidden=false;
 }
