@@ -69,9 +69,9 @@ module.exports = async function handler(req, res) {
 
     const rows = await response.json();
     if (!Array.isArray(rows) || !rows.length) return res.status(404).send("Cartão não encontrado ou inativo.");
-    const data = rows[0];
-    const template = fs.readFileSync(path.join(root, "bio.html"), "utf8");
-    const title = escapeHtml(data.display_name || ("@" + data.username));
+    const row = rows[0] || {};\n    const data = { slug: row.slug || slug, username: row.username || "", display_name: row.display_name || "", tagline: row.tagline || "", avatar_url: row.avatar_url || "", theme_preset: row.theme_preset || "essencial", accent_color: row.accent_color || "#8b5cf6", buttons: Array.isArray(row.buttons) ? row.buttons.filter(Boolean) : [], libras_video_url: row.libras_video_url || "", active: row.active === true };
+    const template = fs.readFileSync(path.join(process.cwd(), 'bio.html'), 'utf8');
+    const title = escapeHtml(data.display_name || (data.username ? "@" + data.username : "Cartão Digital"));
     const description = escapeHtml(data.tagline || "Conheça os canais de contato de " + title + ".");
     const image = /^https?:\/\//i.test(data.avatar_url || "") ? escapeHtml(data.avatar_url) : "";
     const publicUrl = "https://bio.deab.com.br/" + encodeURIComponent(slug);
