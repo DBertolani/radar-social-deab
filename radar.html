@@ -410,8 +410,7 @@ function fillBioForm(d){
  $("bioSlug").value=d.slug||"";$("bioUsername").value=d.username||"";$("bioDisplayName").value=d.display_name||"";
  $("bioTagline").value=d.tagline||"";$("bioAvatar").value=d.avatar_url||"";bioPhotoPreview(d.avatar_url||"");
  $("bioTheme").value=d.theme_preset||"essencial";setBioAccent(d.accent_color||"#8b5cf6",false);
- const storedVideo=String(d.libras_video_url||"");const videoMatch=storedVideo.match(/^deab-video:v1:(apresentacao|libras):(.*)$/s);
- $("bioLibras").value=videoMatch?videoMatch[2]:storedVideo;$("bioVideoBadge").value=videoMatch?videoMatch[1]:"libras";
+ const storedVideo=String(d.libras_video_url||"");const videoMatch=storedVideo.match(/^deab-video:v1:(apresentacao|libras):(.*)$/s);let videoValue=videoMatch?videoMatch[2]:storedVideo,videoBadge=videoMatch?videoMatch[1]:"libras";try{const videoUrl=new URL(videoValue),params=new URLSearchParams(videoUrl.hash.replace(/^#/,"")),savedBadge=params.get("deab_badge");if(savedBadge==="apresentacao"||savedBadge==="libras")videoBadge=savedBadge;if(savedBadge){params.delete("deab_badge");videoUrl.hash=params.toString();videoValue=videoUrl.toString()}}catch{}$("bioLibras").value=videoValue;$("bioVideoBadge").value=videoBadge;
  const buttons=Array.isArray(d.buttons)?d.buttons:[];
  const main=buttons.find(b=>b.type==="whatsapp");
  if(main){const match=(main.url||"").match(/wa\.me\/(\d+)(?:\?text=([^&]*))?/i);$("bioWaPhone").value=match?match[1].replace(/^55/,""):"";$("bioWaLabel").value=main.label||"Falar pelo WhatsApp";if(match&&match[2]){try{$("bioWaMessage").value=decodeURIComponent(match[2].replace(/\+/g," "));}catch{$("bioWaMessage").value="";}}}
@@ -479,7 +478,7 @@ async function publishBio(){
  const extras=Array.from($("bioButtons").children).map(row=>{const f=row.querySelectorAll("select,input");return {type:f[0].value,label:f[1].value.trim(),url:f[2].value.trim()};}).filter(x=>x.label&&x.url);
  for(const b of extras){try{const u=new URL(b.url);if(!["https:","http:"].includes(u.protocol))throw 0;}catch{throw Error("Verifique a URL de um botão extra.");}}
  buttons.push(...extras);
- const libras=$("bioLibras").value.trim();if(libras&&!/^https?:\/\//i.test(libras))throw Error("Informe uma URL válida para o vídeo.");const videoValue=libras?("deab-video:v1:"+$("bioVideoBadge").value+":"+libras):null;
+ const libras=$("bioLibras").value.trim();if(libras&&!/^https?:\/\//i.test(libras))throw Error("Informe uma URL válida para o vídeo.");const videoValue=libras?(()=>{const videoUrl=new URL(libras),params=new URLSearchParams(videoUrl.hash.replace(/^#/,""));params.set("deab_badge",$("bioVideoBadge").value);videoUrl.hash=params.toString();return videoUrl.toString()})():null;
  const payload={p_admin_key:key,p_slug:slug,p_username:username,p_display_name:$("bioDisplayName").value.trim(),p_tagline:$("bioTagline").value.trim(),p_avatar_url:$("bioAvatar").value.trim()||null,p_theme_preset:$("bioTheme").value,p_accent_color:accent,p_buttons:buttons,p_libras_video_url:videoValue,p_active:true};
  const response=await fetch(SUPABASE_URL.replace(/\/+$/,"")+"/rest/v1/rpc/salvar_bio_page",{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY,"Content-Type":"application/json","Content-Profile":"social_analytics",Prefer:"return=representation"},body:JSON.stringify(payload)});
  const raw=await response.text();let data={};try{data=raw?JSON.parse(raw):{};}catch{}if(!response.ok)throw Error(data.message||data.details||data.hint||("RPC respondeu HTTP "+response.status+"."));
