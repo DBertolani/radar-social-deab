@@ -11,7 +11,7 @@
       "destination": "/bio-home.html"
     },
     {
-      "source": "/:slug((?!api/|bio\\.html|bio-home\\.html|index\\.html|config\\.json|.*\\..*).*)",
+      "source": "/:slug((?!api/|radar\\.html|bio\\.html|bio-home\\.html|index\\.html|config\\.json|.*\\..*).*)",
       "has": [
         {
           "type": "host",
@@ -19,6 +19,10 @@
         }
       ],
       "destination": "/api/bio?u=:slug"
+    },
+    {
+      "source": "/",
+      "destination": "/radar.html"
     }
   ]
 }
