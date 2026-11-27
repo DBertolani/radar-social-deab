@@ -8,12 +8,26 @@
   <script>
     (function () {
       "use strict";
+
       var host = window.location.hostname.toLowerCase();
       var isBioDomain = host === "bio.deab.com.br";
-      var destination = isBioDomain ? "/bio-home.html" : "/radar.html";
+      var isGitHubPages = host.endsWith(".github.io");
+      var destination;
+
+      if (isBioDomain) {
+        destination = "/bio-home.html";
+      } else if (isGitHubPages) {
+        // GitHub Pages publica o projeto em um subdiretório; preserve esse prefixo.
+        destination = "./radar.html";
+      } else {
+        destination = "/radar.html";
+      }
+
       window.location.replace(destination + window.location.search + window.location.hash);
     })();
   </script>
 </head>
-<body><p>Abrindo DEAB Digital…</p></body>
+<body>
+  <p>Abrindo DEAB Digital…</p>
+</body>
 </html>
