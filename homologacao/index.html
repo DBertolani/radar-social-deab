@@ -67,7 +67,7 @@ function createPostCard(post){
  const card=node(permalink?"a":"article",undefined,"post-card");
  if(permalink){card.href=permalink;card.target="_blank";card.rel="noopener noreferrer";card.setAttribute("aria-label","Abrir publicação no Instagram");}
  const mediaType=String(post.media_type||post.mediaType||"").toUpperCase();
- const isVideo=mediaType==="VIDEO"||mediaType==="REEL"||/\.mp4(?:$|[?#])/i.test(String(post.media_url||post.url||""));
+ const isVideo=mediaType==="VIDEO"||mediaType==="REEL"||String(post.type||"").toUpperCase()==="VIDEO"||post.isVideo===true||/\.mp4(?:$|[?#])/i.test(String(post.media_url||post.url||""));
  const coverUrl=post.displayUrl||post.thumbnailUrl||post.thumbnail_url||
   (!isVideo?post.media_url||post.url:null)||
   (post.children||[]).find(x=>x.displayUrl||x.thumbnailUrl||x.thumbnail_url||x.media_url)?.displayUrl||
