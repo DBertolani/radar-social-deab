@@ -19,7 +19,7 @@ input,textarea{width:100%;min-height:45px;border:1px solid var(--border);border-
 .results{display:none}.results.visible{display:block}.profile-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.profile-name{margin:0;font-size:1.35rem}.handle{color:#b6adff;margin-top:4px}.bio{white-space:pre-wrap;color:#c0cad8;line-height:1.55;overflow-wrap:anywhere;margin:12px 0}
 .metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-top:17px}.metric{background:var(--surface2);border:1px solid var(--border);border-radius:13px;padding:14px}.metric span{display:block;color:var(--muted);font-size:.76rem;margin-bottom:7px}.metric strong{font-size:1.35rem;overflow-wrap:anywhere}
 .block{margin-top:16px;padding:18px;border:1px solid var(--border);background:#111722;border-radius:14px}.block h3{margin:0 0 12px;font-size:1rem}.block h4{margin:14px 0 7px;font-size:.88rem;color:#c9c1ff}.block ul{padding-left:20px;margin:7px 0;color:#d1d9e6;line-height:1.6}.muted{color:var(--muted)}.competitor-grid,.post-grid,.ideas-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.competitor,.post-card,.idea{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px;min-width:0}.post-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.thumb{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:9px;background:#0b1018;margin-bottom:9px}.thumb-placeholder{aspect-ratio:4/3;display:grid;place-items:center;border-radius:9px;background:#0b1018;color:var(--muted);margin-bottom:9px}
+.competitor,.post-card,.idea{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px;min-width:0}.post-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.thumb{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:9px;background:#0b1018;margin-bottom:9px}.thumb-placeholder{aspect-ratio:4/3;display:grid;place-items:center;border-radius:9px;background:#0b1018;color:var(--muted);margin-bottom:9px}
 .post-card p,.idea p{font-size:.84rem;line-height:1.5;color:#d1d9e6;overflow-wrap:anywhere}.post-card a,.competitor a{color:#b9b0ff;text-decoration:none;font-weight:750}.post-meta{font-size:.75rem;color:var(--muted);margin:7px 0}.pill{display:inline-block;background:#393363;color:#ded8ff;border-radius:999px;padding:4px 8px;font-size:.68rem;font-weight:800;margin:2px}
 footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}
 @media(max-width:760px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.post-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -65,9 +65,20 @@ function validInstagramUrl(value){try{const u=new URL(value);return u.protocol==
 function createPostCard(post){
  const card=node("article",undefined,"post-card");
  const imageUrl=post.media_url||(post.children||[]).find(x=>x.media_url)?.media_url;
- if(imageUrl){try{const u=new URL(imageUrl);if(u.protocol==="https:"){const img=node("img");img.className="thumb";img.src=u.href;img.alt="Miniatura da publicação";img.loading="lazy";img.referrerPolicy="no-referrer";img.onerror=()=>{img.replaceWith(node("div","Miniatura indisponível","thumb-placeholder"));};card.append(img);}else card.append(node("div","Miniatura indisponível","thumb-placeholder"));}catch{card.append(node("div","Miniatura indisponível","thumb-placeholder"));}}
- else card.append(node("div","A API não forneceu URL da mídia","thumb-placeholder"));
- card.append(node("span",safe(post.media_type,"POST"),"pill"));
+ const isVideo=String(post.media_type||"").toUpperCase()==="VIDEO"||/\.mp4(?:$|[?#])/i.test(String(imageUrl||""));
+ if(imageUrl){
+  try{
+   const u=new URL(imageUrl);
+   if(u.protocol!=="https:")throw new Error("URL de mídia não segura");
+   if(isVideo){
+    const video=node("video");video.className="thumb";video.src=u.href;video.muted=true;video.playsInline=true;video.preload="metadata";video.controls=true;video.setAttribute("aria-label","Prévia do Reel");video.onerror=()=>{video.replaceWith(node("div","Vídeo indisponível","thumb-placeholder"));};card.append(video);
+    card.append(node("span","REEL","pill"));
+   }else{
+    const img=node("img");img.className="thumb";img.src=u.href;img.alt="Miniatura da publicação";img.loading="lazy";img.referrerPolicy="no-referrer";img.onerror=()=>{img.replaceWith(node("div","Miniatura indisponível","thumb-placeholder"));};card.append(img);
+   }
+  }catch{card.append(node("div","Mídia indisponível","thumb-placeholder"));}
+ }else card.append(node("div","A API não forneceu URL da mídia","thumb-placeholder"));
+ if(!isVideo)card.append(node("span",safe(post.media_type,"POST"),"pill"));
  card.append(node("div",number(post.like_count)+" curtidas · "+number(post.comments_count)+" comentários","post-meta"));
  card.append(node("p",safe(post.caption,"Sem legenda").slice(0,220)));
  if(post.permalink&&validInstagramUrl(post.permalink)){const a=node("a","Ver publicação ↗");a.href=post.permalink;a.target="_blank";a.rel="noopener noreferrer";card.append(a);}
