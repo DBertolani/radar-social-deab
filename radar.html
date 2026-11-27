@@ -424,14 +424,43 @@ function openBioEditor(){
  bioEditorOpen(true);loadPublishedBioCards().catch(e=>status($("bioPublishStatus"),e.message||"Não foi possível listar cartões.","error"));
 }
 async function loadPublishedBioCards(){
- const select=$("bioPublishedCards");select.replaceChildren(new Option("Carregando cartões publicados…",""));
- const endpoint=SUPABASE_URL.replace(/\/+$/,"")+"/rest/v1/bio_pages?select=slug,username,display_name,tagline,avatar_url,theme_preset,accent_color,buttons,libras_video_url,active,updated_at&active=eq.true&order=updated_at.desc&limit=20";
- const response=await fetch(endpoint,{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY,"Accept-Profile":"social_analytics"}});
- const rows=await response.json().catch(()=>[]);if(!response.ok)throw Error(rows.message||"Falha ao listar cartões publicados.");
- select.replaceChildren(new Option(rows.length?"Selecione um cartão para editar…":"Nenhum cartão publicado encontrado.",""));
- rows.forEach(row=>select.add(new Option((row.display_name||row.username||row.slug)+" — /"+row.slug,row.slug)));
+ const select=$("bioPublishedCards");
+ select.replaceChildren(new Option("Carregando cartões publicados…",""));
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),12000);
+ try{
+  let rows=[];
+  const isGitHubPages=/\.github\.io$/i.test(location.hostname);
+  if(isGitHubPages){
+   const endpoint=SUPABASE_URL.replace(/\/+$/,"")+"/rest/v1/bio_pages?select=slug,username,display_name,updated_at&active=eq.true&order=updated_at.desc&limit=20";
+   const response=await fetch(endpoint,{headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+SUPABASE_ANON_KEY,"Accept-Profile":"social_analytics"},cache:"no-store",signal:controller.signal});
+   const payload=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(payload.message||payload.details||("Supabase respondeu HTTP "+response.status+"."));
+   rows=payload;
+  }else{
+   const response=await fetch("/api/bio-list",{headers:{Accept:"application/json"},cache:"no-store",signal:controller.signal});
+   const payload=await response.json().catch(()=>({}));
+   if(!response.ok)throw Error(payload.error||("Falha ao listar cartões (HTTP "+response.status+")."));
+   rows=payload;
+  }
+  if(!Array.isArray(rows))throw Error("A resposta da listagem não está no formato esperado.");
+  select.replaceChildren(new Option(rows.length?"Selecione um cartão para editar…":"Nenhum cartão publicado encontrado.",""));
+  rows.forEach(row=>select.add(new Option((row.display_name||row.username||row.slug)+" — /"+row.slug,row.slug)));
+  if(!rows.length)status($("bioPublishStatus"),"Nenhum cartão ativo foi encontrado neste ambiente.","error");
+ }catch(error){
+  const message=error.name==="AbortError"?"A listagem excedeu 12 segundos. Verifique a conexão e tente novamente.":(error.message||"Não foi possível listar cartões.");
+  select.replaceChildren(new Option("Falha ao carregar — clique para tentar novamente","__retry__"));
+  status($("bioPublishStatus"),message,"error");
+  throw error;
+ }finally{clearTimeout(timeout)}
 }
 function suggestBioTexts(){
+ const name=$("bioDisplayName").value.trim()||latest?.profile?.name||latest?.profile?.username||$("bioUsername").value.trim().replace(/^@+/,"")||"Seu negócio";
+ const keywords=String($("nicheContext")?.value||latest?.niche_context||latest?.profile?.biography||"").replace(/\s+/g," ").trim();
+ const ai=latest?.ai_analysis?.auditoria_bio||{};
+ const strengths=(ai.pontos_fortes||[]).map(x=>String(x).trim()).filter(Boolean);
+ const aiBios=(ai.sugestoes_bio||[]).map(x=>String(x).trim()).filter(Boolean);
+ const escapeRegExp=value=>String(value).replace(/[.*+?^${}()|[\]\\]/g,"\\function suggestBioTexts(){
  const name=$("bioDisplayName").value.trim()||latest?.profile?.name||latest?.profile?.username||"Seu negócio";
  const keywords=String($("nicheContext")?.value||latest?.niche_context||latest?.profile?.biography||"").replace(/\s+/g," ").trim();
  const ai=latest?.ai_analysis?.auditoria_bio||{},strengths=(ai.pontos_fortes||[]).map(x=>String(x).trim()).filter(Boolean),aiBios=(ai.sugestoes_bio||[]).map(x=>String(x).trim()).filter(Boolean);
@@ -443,6 +472,31 @@ function suggestBioTexts(){
  ];
  const root=$("bioTextSuggestions");root.replaceChildren();
  options.forEach(option=>{const button=document.createElement("button");button.type="button";button.className="bio-text-option";const title=document.createElement("strong");title.textContent=option.title;const preview=document.createElement("span");preview.textContent=option.bio+"\nWhatsApp: "+option.message;button.append(title,preview);button.addEventListener("click",()=>{$("bioTagline").value=option.bio.slice(0,220);$("bioWaMessage").value=option.message;status($("bioPublishStatus"),"Texto e mensagem aplicados. Você pode editar antes de publicar.","success");});root.append(button);});
+}
+async function loadExistingBio(){");
+ const removeName=value=>String(value||"").replace(new RegExp("^\\s*"+escapeRegExp(name)+"\\s*(?:[|—–:,-]\\s*)?","i"),"").trim();
+ const focus=strengths.slice(0,2).join(" · ")||keywords||"qualidade, confiança e atendimento";
+ const authority=removeName(aiBios[0])||focus+". Conteúdo, orientação e soluções para você.";
+ const institutional=removeName(aiBios[1])||((keywords&&removeName(keywords))||"Soluções e atendimento com confiança.")+". Entre em contato e conheça nossos serviços.";
+ const options=[
+  {title:"Autoridade",name,bio:authority,message:"Olá! Conheci "+name+" pelo Instagram e gostaria de saber mais sobre o trabalho e as soluções oferecidas."},
+  {title:"Orçamento Rápido",name,bio:"Atendimento ágil e soluções sob medida. Peça seu orçamento pelo WhatsApp.",message:"Olá, "+name+"! Gostaria de solicitar um orçamento. Poderia me passar informações, valores e disponibilidade?"},
+  {title:"Institucional",name,bio:institutional,message:"Olá! Gostaria de conhecer melhor "+name+", os serviços oferecidos e como funciona o atendimento."}
+ ];
+ const root=$("bioTextSuggestions");root.replaceChildren();
+ options.forEach(option=>{
+  const button=document.createElement("button");button.type="button";button.className="bio-text-option";
+  const title=document.createElement("strong");title.textContent=option.title;
+  const preview=document.createElement("span");preview.textContent=option.name+"\n"+option.bio+"\nWhatsApp: "+option.message;
+  button.append(title,preview);
+  button.addEventListener("click",()=>{
+   $("bioDisplayName").value=option.name;
+   $("bioTagline").value=option.bio.slice(0,220);
+   $("bioWaMessage").value=option.message;
+   status($("bioPublishStatus"),"Nome exibido, apresentação curta e mensagem do WhatsApp aplicados. Você pode editar antes de publicar.","success");
+  });
+  root.append(button);
+ });
 }
 async function loadExistingBio(){
  const slug=$("bioSlug").value.trim().toLowerCase();
@@ -470,7 +524,7 @@ async function publishBio(){
 }
 $("openBioEditor").addEventListener("click",openBioEditor);$("closeBioEditor").addEventListener("click",()=>bioEditorOpen(false));
 $("bioEditorModal").addEventListener("click",e=>{if(e.target===$("bioEditorModal"))bioEditorOpen(false)});
-$("bioPublishedCards").addEventListener("change",async()=>{const slug=$("bioPublishedCards").value;if(!slug)return;$("bioSlug").value=slug;try{await loadExistingBio()}catch(e){status($("bioPublishStatus"),e.message,"error");}});$("suggestBioTexts").addEventListener("click",suggestBioTexts);$("openBioEditorTop").addEventListener("click",openBioEditor);$("loadBioExisting").addEventListener("click",async()=>{const b=$("loadBioExisting");b.disabled=true;try{await loadExistingBio()}catch(e){status($("bioPublishStatus"),e.message,"error")}finally{b.disabled=false}});
+$("bioPublishedCards").addEventListener("change",async()=>{const slug=$("bioPublishedCards").value;if(slug==="__retry__"){loadPublishedBioCards().catch(()=>{});return;}if(!slug)return;$("bioSlug").value=slug;try{await loadExistingBio()}catch(e){status($("bioPublishStatus"),e.message,"error");}});$("suggestBioTexts").addEventListener("click",suggestBioTexts);$("openBioEditorTop").addEventListener("click",openBioEditor);$("loadBioExisting").addEventListener("click",async()=>{const b=$("loadBioExisting");b.disabled=true;try{await loadExistingBio()}catch(e){status($("bioPublishStatus"),e.message,"error")}finally{b.disabled=false}});
 $("addBioButton").addEventListener("click",()=>{});
 $("bioAvatar").addEventListener("input",e=>bioPhotoPreview(e.target.value));
 $("bioColorSwatches").addEventListener("click",e=>{const b=e.target.closest("button[data-color]");if(b)setBioAccent(b.dataset.color,false)});
