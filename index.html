@@ -34,12 +34,12 @@ footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}.advanc
 <body><main class="shell">
 <header><div><div class="eyebrow">DEAB · Inteligência social</div><h1>Radar Social DEAB</h1></div><span class="environment">HOMOLOGAÇÃO — AMBIENTE DE TESTES</span></header>
 <section class="panel"><h2>Análise estratégica de Instagram</h2><p class="sub">Colete o perfil principal, compare até três referências e receba diagnóstico com Gemini quando a secret GEMINI_API_KEY estiver configurada.</p>
-<form id="analysisForm" class="form-grid">
+<form id="analysisForm" class="form-grid" onsubmit="return false;">
 <div class="field"><label for="username">Perfil Principal (@)</label><input id="username" maxlength="31" placeholder="@seu_perfil" required></div>
 <div class="field"><label for="category">Categoria</label><select id="category"><option value="cliente">Cliente</option><option value="proprio">Próprio</option><option value="concorrente">Concorrente</option></select></div>
 <div class="field full"><label for="competitors">Concorrentes / Referências do Nicho (até 3 @ separados por vírgula)</label><input id="competitors" placeholder="@perfil1, @perfil2, @perfil3"><div class="post-tools"><button id="suggestCompetitors" type="button">✨ Sugerir concorrentes do nicho</button></div><div id="competitorSuggestions" class="suggestion-list" aria-live="polite"></div></div>
 <div class="field full"><label for="nicheContext">Nicho e Cidade / Objetivo</label><textarea id="nicheContext" placeholder="Ex.: estética em Cantagalo/RJ; atrair clientes locais e aumentar pedidos de orçamento."></textarea></div>
-<div class="field full"><button id="analyzeButton" class="button" type="submit">Analisar Perfil e Concorrentes</button></div>
+<div class="field full"><button id="analyzeButton" class="button" type="button">Analisar Perfil e Concorrentes</button></div>
 </form><div id="status" class="status" role="status" aria-live="polite"></div></section>
 <section id="results" class="results">
 <section class="panel result-section"><h2>1. Raio-X do Perfil e Métricas</h2><div class="profile-head"><div><h3 id="profileName" class="profile-name">—</h3><div id="profileUsername" class="handle"></div></div><span id="aiBadge" class="tag">ANÁLISE</span></div><p id="profileBio" class="bio"></p><div class="muted" id="profileLink"></div>
@@ -60,7 +60,8 @@ footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}.advanc
  </div>
 </details>
 </footer></main><div id="scriptModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="scriptTitle"><div class="modal"><div class="modal-head"><h2 id="scriptTitle">🎬 Modelar Roteiro</h2><button id="closeScript" class="modal-close" type="button" aria-label="Fechar">×</button></div><div id="scriptContent"></div><button id="copyScript" class="button copy" type="button">Copiar Roteiro</button><div id="scriptCopyStatus" class="status" role="status"></div></div></div>
-<script>
+<script>document.querySelectorAll("form").forEach(form=>form.addEventListener("submit",ev=>ev.preventDefault()));
+
 "use strict";
 const SUPABASE_URL="https://ywybqrunxreaencndztg.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_3MB32qjyJD1IMrUHC9KEzA_t2e5L-tP";
@@ -69,9 +70,10 @@ const $=id=>document.getElementById(id);
 const el={url:$("supabaseUrl"),anon:$("supabaseAnonKey"),form:$("analysisForm"),username:$("username"),competitors:$("competitors"),context:$("nicheContext"),category:$("category"),button:$("analyzeButton"),status:$("status"),results:$("results"),copy:$("copySummary"),copyStatus:$("copyStatus")};
 let latest=null;
 // Credenciais salvas anteriormente continuam compatíveis; na ausência delas, usam-se os padrões fixos.
-el.url.value=localStorage.getItem(KEYS.url)||SUPABASE_URL;el.anon.value=localStorage.getItem(KEYS.anon)||SUPABASE_ANON_KEY;
-el.url.addEventListener("input",()=>localStorage.setItem(KEYS.url,el.url.value.trim()));
-el.anon.addEventListener("input",()=>localStorage.setItem(KEYS.anon,el.anon.value.trim()));
+if(el.url)el.url.value=localStorage.getItem(KEYS.url)||SUPABASE_URL;
+if(el.anon)el.anon.value=localStorage.getItem(KEYS.anon)||SUPABASE_ANON_KEY;
+el.url?.addEventListener("input",()=>localStorage.setItem(KEYS.url,el.url.value.trim()));
+el.anon?.addEventListener("input",()=>localStorage.setItem(KEYS.anon,el.anon.value.trim()));
 const number=v=>new Intl.NumberFormat("pt-BR",{maximumFractionDigits:1}).format(Number(v||0));
 const percent=v=>Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
 const safe=(v,f="Não informado")=>v===null||v===undefined||v===""?f:String(v);
@@ -108,7 +110,8 @@ function localCaptionPackage(post,context,bio){
  const caption=original?original.replace(/\s+/g," ").slice(0,500):"Você já conhece essa solução? Neste conteúdo, mostramos informações práticas para ajudar você a escolher com mais segurança. Salve para consultar depois e compartilhe com alguém que precisa saber disso.";
  return {caption:caption+"\n\n"+(post.cta||"Gostou da dica? Salve este post e fale com a gente pelo direct."),hashtags:[...tags].slice(0,10).join(" ")};
 }
-\nfunction scriptFor(p){
+
+function scriptFor(p){
  const cap=String(p.caption||"").replace(/https?:\/\/\S+/g,"").trim(),topic=cap.split(/[.!?\n]/).map(x=>x.trim()).find(x=>x.length>12)||"uma dúvida comum do público";
  return [["Gancho (0–3s)",cap.slice(0,110)||"Você também tem essa dúvida?"],["Contexto (3–10s)","Apresente a situação: "+topic+". Explique por que isso importa."],["Desenvolvimento (10–25s)","Mostre uma demonstração, 2 ou 3 orientações práticas ou um exemplo real. Use frases curtas e imagens de apoio."],["CTA (25–30s)",/orçamento|orcamento|agende|whatsapp|contrate/i.test(cap)?"Convide a pessoa a solicitar um orçamento ou chamar no direct.":"Peça para salvar, compartilhar ou enviar uma dúvida nos comentários."]];
 }
@@ -116,12 +119,13 @@ let currentScript=null,activePostFilter="all";
 function modelScript(post,username){
  const packageData=localCaptionPackage(post,el.context.value,latest?.profile?.biography||"");
  currentScript={post,username,steps:scriptFor(post),packageData};
- const root=$("scriptContent");root.replaceChildren();
+ const root=$("scriptContent"),modal=$("scriptModal");if(!root||!modal)return;root.replaceChildren();
  currentScript.steps.forEach(([h,t])=>{const box=node("div",undefined,"script-step");box.append(node("strong",h),node("p",t));root.append(box);});
  const captionBox=node("div",undefined,"script-step");captionBox.append(node("strong","Legenda Otimizada"),node("p",packageData.caption),node("strong","Hashtags Locais e de Nicho"),node("p",packageData.hashtags));
  captionBox.append(copyButton(packageData.caption+"\n\n"+packageData.hashtags,"Copiar legenda e hashtags"));root.append(captionBox);
  $("scriptModal").classList.add("open");$("scriptCopyStatus").className="status";
-}\nfunction competitorSearchTerms(context,bio){
+}
+function competitorSearchTerms(context,bio){
  const source=(String(context||"")+" "+String(bio||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
  const groups=[
   {terms:["cosmetico","cosmeticos","skincare","perfumaria","perfume"],queries:["cosmeticos"]},
@@ -167,7 +171,8 @@ function compactVideoFallback(post){
  if(views!==undefined&&views!==null&&Number(views)>0)card.append(node("span",number(views)+" visualizações","video-views"));
  if(post.permalink&&validInstagramUrl(post.permalink)){const link=node("a","Abrir no Instagram ↗");link.href=post.permalink;link.target="_blank";link.rel="noopener noreferrer";card.append(link);}
  return card;
-}\nfunction createPostCard(post,username){
+}
+function createPostCard(post,username){
  const card=node("article",undefined,"post-card"),kind=mediaKind(post),media=node("div",undefined,"post-media"),imageUrl=post.thumbnail_url||post.media_url;
  const mediaUrl=String(post.media_url||""),videoWithoutThumbnail=String(post.media_type||post.mediaType||"").toUpperCase()==="VIDEO"&&!post.thumbnail_url;
  const videoFile=/\.(?:mp4|mov|webm)(?:[?#].*)?$/i.test(mediaUrl)||/\.(?:mp4|mov|webm)(?:[?#].*)?$/i.test(String(imageUrl||""));
@@ -180,8 +185,9 @@ function compactVideoFallback(post){
  const tools=node("div",undefined,"post-tools"),btn=node("button","🎬 Modelar Roteiro","model-button");btn.type="button";btn.addEventListener("click",()=>modelScript(post,username));tools.append(btn);
  if(post.permalink&&validInstagramUrl(post.permalink)){const link=node("a","Ver publicação ↗");link.href=post.permalink;link.target="_blank";link.rel="noopener noreferrer";tools.append(link);}
  card.append(tools);return card;
-}\nfunction renderAI(ai,data){
- const bio=$("bioAnalysis"),niche=$("nicheAnalysis"),visual=$("visualAnalysis"),ideas=$("ideasAnalysis");
+}
+function renderAI(ai,data){
+ const bio=$("bioAnalysis"),niche=$("nicheAnalysis"),visual=$("visualAnalysis"),ideas=$("ideasAnalysis");if(!bio||!niche||!visual||!ideas)return;
  const hasCompetitors=(data.competitors||[]).length>0,nicheTitle=$("nicheTitle");
  [bio,niche,visual,ideas].forEach(x=>x.replaceChildren());
  nicheTitle.textContent=hasCompetitors?"Comparativo com o Nicho":"Posicionamento e Diferenciais Competitivos do Nicho";
@@ -208,4 +214,133 @@ function compactVideoFallback(post){
   ideas.append(card);
  });
  if(!ideas.childElementCount)ideas.append(node("p","Nenhuma ideia retornada.","muted"));
-}\n
+}
+
+function funnelSummary(posts){const counts={Topo:0,Meio:0,Fundo:0};posts.forEach(p=>counts[classifyFunnel(p)]++);const total=posts.length||1;const root=$("funnelSummary");if(!root)return;root.replaceChildren();Object.entries(counts).forEach(([name,count])=>{const pct=count/total*100,box=node("div",undefined,"funnel-card");box.append(node("strong",name+" de Funil"),node("div",Math.round(pct)+"% · "+count+" posts","post-meta"));const bar=node("div",undefined,"funnel-bar"),fill=node("span");fill.style.width=pct+"%";bar.append(fill);box.append(bar,node("p",name==="Topo"?"Atração e alcance":name==="Meio"?"Retenção e autoridade":"Conversão e orçamento","muted"));root.append(box);});}
+function renderOutliers(posts,username){const rates=posts.map(p=>Number(p.engagement_rate||0)),avg=rates.length?rates.reduce((a,b)=>a+b,0)/rates.length:0;const tagged=posts.map(p=>({...p,_outlier:avg>0&&Number(p.engagement_rate||0)>avg*1.5}));const chosen=tagged.filter(p=>activePostFilter==="winners"?p._outlier:activePostFilter==="low"?Number(p.engagement_rate||0)<avg*.5:true);const root=$("postsList");if(!root)return;root.replaceChildren();if(!chosen.length){root.append(node("p","Nenhum post corresponde a este filtro.","muted"));return;}chosen.forEach(p=>root.append(createPostCard(p,username)));$("postFilters").querySelectorAll("button").forEach(x=>x.classList.toggle("active",x.dataset.filter===activePostFilter));}
+function renderComparison(data){const root=$("competitorComparison");if(!root)return;const profiles=[{profile:data.profile,metrics_summary:data.metrics_summary,posts:data.posts||[]},...(data.competitors||[])].filter(x=>x.profile&&!x.error);root.replaceChildren();if(profiles.length<2){root.append(node("p","Adicione e colete pelo menos uma referência para visualizar o comparativo lado a lado.","muted"));return;}const table=node("table",undefined,"compare-table"),head=node("tr");["Métrica",...profiles.map(x=>"@"+x.profile.username)].forEach(t=>head.append(node("th",t)));table.append(head);const rows=[["Seguidores",x=>number(x.profile.followers_count)],["Média de Curtidas",x=>number(x.metrics_summary?.average_likes)],["Média de Comentários",x=>number(x.metrics_summary?.average_comments)],["Engajamento Médio %",x=>percent(x.metrics_summary?.avg_engagement_rate)],["Formato Dominante",x=>{const counts={};(x.posts||[]).forEach(p=>{const k=p.media_type||"Não informado";counts[k]=(counts[k]||0)+1;});return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||"Não informado";}]];rows.forEach(([label,fn])=>{const tr=node("tr");tr.append(node("th",label));profiles.forEach(x=>tr.append(node("td",fn(x))));table.append(tr);});root.append(table);}
+function actionsAndCalendar(data){
+ if(!$("nextActions")||!$("weeklyCalendar"))return {actions:[],calendar:[]};
+ const ai=data.ai_analysis||{},context=String(data.niche_context||"").trim(),posts=data.posts||[],summary=data.metrics_summary||{};
+ const bio=ai.auditoria_bio||{},visual=ai.analise_visual_conteudo||{},positioning=ai.posicionamento_nicho_sem_concorrentes||[];
+ const comparisons=(ai.comparativo_nicho||[]).flatMap(x=>[...(x.oportunidades||[]),...(x.diferencas_observadas||[])]);
+ const ideas=ai.ideias_posts_reels||[],items=arr=>(arr||[]).map(x=>String(x||"").trim()).filter(Boolean);
+ const actions=[...items(bio.melhorias),...items(visual.oportunidades),...items(positioning),...comparisons.map(String).filter(Boolean)];
+ if(posts.length){const avg=Number(summary.avg_engagement_rate||0),ranked=[...posts].sort((x,y)=>Number(y.engagement_rate||0)-Number(x.engagement_rate||0));if(ranked.length&&Number(ranked[0].engagement_rate||0)>avg)actions.push("Priorizar o tema/formato da publicação de melhor engajamento ("+safe(ranked[0].media_type,"formato não identificado")+", "+percent(ranked[0].engagement_rate)+").");const below=posts.filter(p=>Number(p.engagement_rate||0)<avg).length;if(below)actions.push("Revisar os "+below+" conteúdos abaixo da média da amostra ("+percent(avg)+").");}
+ ideas.slice(0,3).forEach(x=>actions.push("Produzir "+safe(x.formato,"conteúdo")+" sobre “"+safe(x.tema,"tema sugerido")+"”, partindo do gancho: "+safe(x.gancho,"não informado")+"."));
+ const unique=[...new Set(actions)].slice(0,6),root=$("nextActions");root.replaceChildren();
+ if(context)root.append(node("p","Contexto considerado: "+context,"muted"));
+ if(unique.length)addList(root,"Next Actions — prioridades do diagnóstico",unique);
+ else root.append(node("p",Object.keys(ai).length?"O diagnóstico não trouxe recomendações acionáveis suficientes.":"Next Actions indisponível: não há diagnóstico Gemini para personalizar as prioridades.","muted"));
+ const days=["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"],sourceIdeas=ideas.filter(x=>x&&String(x.tema||"").trim());
+ const calendar=sourceIdeas.length?days.map((day,i)=>{const idea=sourceIdeas[i%sourceIdeas.length];return [day,safe(idea.formato,"Não especificado"),safe(idea.objetivo,"Não especificado"),safe(idea.tema)+(i>=sourceIdeas.length?" — variação de abordagem":""),safe(idea.gancho,"Não informado")];}):[];
+ const table=node("table",undefined,"calendar-table"),head=node("tr");["Dia","Formato","Objetivo","Tema recomendado pelo Gemini","Gancho"].forEach(x=>head.append(node("th",x)));table.append(head);
+ if(calendar.length)calendar.forEach(row=>{const tr=node("tr");row.forEach(v=>tr.append(node("td",v)));table.append(tr);});
+ else{const tr=node("tr"),td=node("td","Calendário não gerado: o Gemini não retornou ideias estruturadas para esta análise.");td.colSpan=5;tr.append(td);table.append(tr);}
+ if(context){const caption=node("caption","Planejamento orientado pelo contexto: "+context);caption.style.captionSide="bottom";caption.style.textAlign="left";caption.style.padding="10px";caption.style.color="var(--muted)";table.append(caption);}
+ $("weeklyCalendar").replaceChildren(table);return {actions:unique,calendar};
+}
+function renderCompetitorPosts(items){const root=$("competitorPosts");if(!root)return;root.replaceChildren();(items||[]).forEach(c=>{if(c.error||!c.posts?.length)return;const section=node("section",undefined,"block");section.append(node("h4","@"+safe(c.profile?.username)));const grid=node("div",undefined,"post-grid");c.posts.forEach(post=>grid.append(createPostCard(post,c.profile?.username||"concorrente")));section.append(grid);root.append(section);});if(!root.childElementCount)root.append(node("p","Nenhuma publicação de concorrente disponível.","muted"));}
+function render(data){
+ const required=["profileName","profileUsername","profileBio","profileLink","followers","mediaCount","avgLikes","avgEngagement","aiBadge","results"];
+ if(required.some(id=>!$(id)))return;
+ const p=data.profile,m=data.metrics_summary||{};
+ $("profileName").textContent=safe(p.name,p.username);$("profileUsername").textContent="@"+p.username;
+ $("profileBio").textContent=safe(p.biography,"Perfil sem bio pública.");
+ $("profileLink").textContent="Link: "+safe(p.website,"não informado");
+ $("followers").textContent=number(p.followers_count);$("mediaCount").textContent=number(p.media_count);
+ $("avgLikes").textContent=number(m.average_likes);$("avgEngagement").textContent=percent(m.avg_engagement_rate);
+ $("aiBadge").textContent=data.ai_analysis?"GEMINI · ANÁLISE COMPLETA":"COLETA · SEM GEMINI";
+ renderAI(data.ai_analysis,data);renderCompetitorPosts(data.competitors||[]);funnelSummary(data.posts||[]);renderOutliers(data.posts||[],p.username);renderComparison(data);actionsAndCalendar(data);$("results").classList.add("visible");
+}
+function exportPost(post){
+ const source=post&&typeof post==="object"?post:{};
+ const result={
+  id:safe(source.id||source.shortCode,""),
+  permalink:source.permalink||null,
+  caption:source.caption||"",
+  media_type:source.media_type||source.mediaType||"",
+  timestamp:source.timestamp||null,
+  like_count:Number(source.like_count??source.likesCount??0),
+  comments_count:Number(source.comments_count??source.commentsCount??0),
+  engagement_rate:Number(source.engagement_rate??source.engagementRate??0)
+ };
+ const views=source.view_count??source.viewCount??source.videoViewCount;
+ if(views!==undefined&&views!==null)result.view_count=Number(views)||0;
+ return result;
+}
+function cleanCompetitors(items){
+ return (items||[]).map(item=>{
+  const profile=item.profile||{};
+  const summary=item.metrics_summary||{};
+  return {
+   profile:{username:profile.username||"",name:profile.name||"",biography:profile.biography||"",website:profile.website||"",followers_count:Number(profile.followers_count||0),media_count:Number(profile.media_count||0)},
+   metrics_summary:{posts_sampled:Number(summary.posts_sampled||0),average_likes:Number(summary.average_likes||0),average_comments:Number(summary.average_comments||0),avg_engagement_rate:Number(summary.avg_engagement_rate||0)},
+   posts:(item.posts||[]).map(exportPost),
+   ...(item.error?{error:item.error}:{}),
+   ...(item.hint?{hint:item.hint}:{})
+  };
+ });
+}
+function cleanCaption(value){
+ const lines=String(value||"").replace(/\r\n?/g,"\n").split("\n");
+ return lines.filter(line=>!/^\s*\.(?:\s*\.)*\s*$/.test(line)).join("\n").replace(/\n{3,}/g,"\n\n").trim();
+}
+function lines(posts){
+ const ordered=(posts||[]).map((post,index)=>({post,index,rate:Number(post.engagement_rate??post.engagementRate??0)})).sort((a,b)=>b.rate-a.rate);
+ if(!ordered.length)return "Sem publicações.";
+ const top=new Set(ordered.slice(0,3).map(x=>x.index));
+ const low=new Set(ordered.slice(-3).map(x=>x.index));
+ const fullCaptionIndexes=new Set([...ordered.slice(0,5),...ordered.slice(-3)].map(x=>x.index));
+ return ordered.map((entry,index)=>{
+  const p=entry.post;
+  const marker=top.has(entry.index)?"[TOP]":low.has(entry.index)?"[BAIXO]":"";
+  const caption=cleanCaption(p.caption);
+  const exportedCaption=fullCaptionIndexes.has(entry.index)?(caption||"Sem legenda"):(caption.length>280?caption.slice(0,277).trimEnd()+"…":caption||"Sem legenda");
+  return [((marker?marker+" ":"")+(index+1)+". "+safe(p.media_type||p.mediaType,"POST")+" | "+safe(p.timestamp)), "Engajamento: "+percent(p.engagement_rate??p.engagementRate),"Curtidas: "+number(p.like_count??p.likesCount)+" | Comentários: "+number(p.comments_count??p.commentsCount),"Visualizações: "+number(p.view_count??p.viewCount??p.videoViewCount),"Legenda: "+exportedCaption,"Link: "+safe(p.permalink,"não disponível")].join("\n");
+ }).join("\n\n");
+}
+function briefing(d){return ["RADAR SOCIAL DEAB — BRIEFING E AUDITORIA DE INSTAGRAM","","CONTEXTO: "+safe(d.niche_context,"Não informado"),"PERFIL PRINCIPAL: @"+d.profile.username,"Nome: "+safe(d.profile.name),"Bio: "+safe(d.profile.biography),"Link: "+safe(d.profile.website),"Seguidores: "+number(d.profile.followers_count),"Posts: "+number(d.profile.media_count),"Média curtidas: "+number(d.metrics_summary.average_likes),"Média comentários: "+number(d.metrics_summary.average_comments),"Engajamento médio: "+percent(d.metrics_summary.avg_engagement_rate),"","CONCORRENTES / REFERÊNCIAS",JSON.stringify(cleanCompetitors(d.competitors),null,2),"","ANÁLISE GEMINI",JSON.stringify(d.ai_analysis||{status:"Não configurada",warning:d.ai_warning||"GEMINI_API_KEY ausente"},null,2),"","TODOS OS POSTS (ENGAJAMENTO DECRESCENTE)",lines(d.posts),"","NEXT ACTIONS E CALENDÁRIO EDITORIAL",JSON.stringify(actionsAndCalendar(d),null,2),"","INSTRUÇÃO: Separe fatos de hipóteses. A partir dos dados, refine o posicionamento, calendário editorial de 30 dias, ideias de posts, roteiros de Reels, CTAs e oportunidades orgânicas. Não invente métricas."].join("\n");}
+async function runAnalysis(ev){
+ if(ev?.preventDefault)ev.preventDefault();
+ if(!el.username||!el.competitors||!el.context||!el.category||!el.button||!el.status||!el.results)return;
+ ev.preventDefault();const base=SUPABASE_URL.replace(/\/+$/,""),key=SUPABASE_ANON_KEY,username=el.username.value.trim().replace(/^@+/,"");
+ const nicheContext=el.context.value.trim();const competitors=el.competitors.value.split(",").map(x=>x.trim().replace(/^@+/,"")).filter(Boolean);
+ if(!/^https:\/\/[a-z0-9.-]+$/i.test(base)){status(el.status,"Informe uma SUPABASE_URL válida (https://...).","error");return;}
+ if(!key){status(el.status,"Informe a SUPABASE_ANON_KEY.","error");return;}
+ if(!/^[a-zA-Z0-9._]{1,30}$/.test(username)){status(el.status,"Informe um @username principal válido.","error");return;}
+ if(competitors.length>3){status(el.status,"Informe no máximo 3 concorrentes/referências.","error");return;}
+ 
+ el.button.disabled=true;el.button.textContent="Coletando e analisando…";el.results.classList.remove("visible");
+ try{
+  const response=await fetch(base+"/functions/v1/coletar-instagram",{method:"POST",headers:{"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key},body:JSON.stringify({username,category:el.category.value,competitors,niche_context:nicheContext})});
+  const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error([data.error,data.hint,data.detail].filter(Boolean).join(" ")||"Erro HTTP "+response.status);
+  if(!data.profile||!data.metrics_summary)throw new Error("Resposta sem os dados esperados.");
+  latest={...data,niche_context:nicheContext};render(latest);
+  status(el.status,data.ai_analysis?"Coleta e análise Gemini concluídas.":"Coleta concluída. "+(data.ai_warning||"Gemini não configurado; exibindo dados coletados."),"success");
+ }catch(e){status(el.status,e.message||"Falha na análise.","error");}
+ finally{el.button.disabled=false;el.button.textContent="Analisar Perfil e Concorrentes";}
+}
+el.form?.addEventListener("submit",runAnalysis);
+el.button?.addEventListener("click",runAnalysis);
+
+$("postFilters")?.addEventListener("click",ev=>{const b=ev.target.closest("button[data-filter]");if(!b||!latest)return;activePostFilter=b.dataset.filter;renderOutliers(latest.posts||[],latest.profile.username);});
+$("closeScript")?.addEventListener("click",()=>$("scriptModal").classList.remove("open"));
+$("scriptModal")?.addEventListener("click",ev=>{if(ev.target.id==="scriptModal")ev.currentTarget.classList.remove("open");});
+$("copyScript")?.addEventListener("click",async()=>{if(!currentScript)return;const text=currentScript.steps.map(([h,t])=>h+"\n"+t).join("\n\n");try{await navigator.clipboard.writeText(text);status($("scriptCopyStatus"),"Roteiro copiado para a área de transferência.","success");}catch{status($("scriptCopyStatus"),"Não foi possível copiar neste navegador.","error");}});
+$("suggestCompetitors")?.addEventListener("click",()=>{
+ const context=$("nicheContext").value.trim(),bio=latest?.profile?.biography||"",detected=competitorSearchTerms(context,bio);
+ const queries=detected.niche.map(term=>[term,detected.city].filter(Boolean).join(" "));
+ if(!queries.length)queries.push(detected.city?("negocios locais "+detected.city):"negocios locais");
+ const root=$("competitorSuggestions");root.replaceChildren();
+ root.append(node("p","Pesquisas curtas para localizar perfis comerciais reais do mesmo segmento. Confira os perfis encontrados e adicione manualmente os @ relevantes.","muted"));
+ queries.forEach(q=>{
+  const a=node("a","Instagram: "+q);a.href="https://www.instagram.com/explore/search/keyword/?q="+encodeURIComponent(q);a.target="_blank";a.rel="noopener noreferrer";a.className="suggestion";root.append(a);
+ });
+ const googleTerms=["instagram",...detected.niche,detected.city].filter(Boolean).join(" ");
+ const g=node("a","Google: "+googleTerms);g.href="https://www.google.com/search?q="+encodeURIComponent(googleTerms);g.target="_blank";g.rel="noopener noreferrer";g.className="suggestion";root.append(g);
+});
+
+el.copy?.addEventListener("click",async()=>{if(!latest)return;const text=briefing(latest);try{await navigator.clipboard.writeText(text);status(el.copyStatus,"Briefing completo copiado.","success");}catch{const t=node("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";document.body.append(t);t.select();const ok=document.execCommand("copy");t.remove();status(el.copyStatus,ok?"Briefing copiado.":"Não foi possível copiar neste navegador.",ok?"success":"error");}});
+
+</script></body></html>
