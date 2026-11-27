@@ -1,0 +1,28 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "bio.deab.com.br"
+        }
+      ],
+      "destination": "/bio-home.html"
+    },
+    {
+      "source": "/:slug((?!.*\\.(?:html|css|js|json|png|svg|ico)$)[^/]+)",
+      "has": [
+        {
+          "type": "host",
+          "value": "bio.deab.com.br"
+        }
+      ],
+      "destination": "/bio.html?u=:slug"
+    },
+    {
+      "source": "/",
+      "destination": "/index.html"
+    }
+  ]
+}
