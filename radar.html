@@ -37,7 +37,7 @@ footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}.advanc
 </head>
 <body><main class="shell">
 <header><div><div class="eyebrow">DEAB · Inteligência social</div><h1>Radar Social DEAB</h1></div><button id="openBioEditorTop" type="button" class="button bio-top-button">💳 Criar / Editar Cartão Digital</button><span class="environment">HOMOLOGAÇÃO — AMBIENTE DE TESTES</span></header>
-<section class="panel"><h2>Análise estratégica de Instagram</h2><p class="sub">Colete o perfil principal, compare até três referências e receba diagnóstico com Gemini quando a secret GEMINI_API_KEY estiver configurada.</p>
+<section class="panel"><h2>Análise estratégica de Instagram</h2><p class="sub">Colete o perfil principal, compare até três referências e receba diagnóstico com Gemini quando a secret serviço de IA estiver configurada.</p>
 <form id="analysisForm" class="form-grid" onsubmit="return false;">
 <div class="field"><label for="username">Perfil Principal (@)</label><input id="username" maxlength="31" placeholder="@seu_perfil" required></div>
 <div class="field"><label for="category">Categoria</label><select id="category"><option value="cliente">Cliente</option><option value="proprio">Próprio</option><option value="concorrente">Concorrente</option></select></div>
@@ -245,10 +245,10 @@ function renderAI(ai,data){
  renderHashtagRecommendations(ai,data);
  nicheTitle.textContent=hasCompetitors?"Comparativo com o Nicho":"Posicionamento e Diferenciais Competitivos do Nicho";
  if(!ai){
-  bio.append(node("p","Análise por IA não disponível. Os dados coletados estão apresentados; configure GEMINI_API_KEY nos secrets da Edge Function para gerar diagnóstico estratégico.","muted"));
+  bio.append(node("p","Análise por IA não disponível. Os dados coletados estão apresentados; configure serviço de IA nos secrets da Edge Function para gerar diagnóstico estratégico.","muted"));
   if(!hasCompetitors)niche.append(node("p","Nenhum concorrente foi informado. A análise de posicionamento estratégico por segmento e localização será gerada quando a análise Gemini estiver habilitada.","muted"));
   (data.competitors||[]).forEach(c=>{const card=node("article",undefined,"competitor");card.append(node("h4","@"+safe(c.profile?.username)),node("p","Seguidores: "+number(c.profile?.followers_count)+" · Posts: "+number(c.profile?.media_count),"post-meta"),node("p","Engajamento médio da amostra: "+percent(c.metrics_summary?.avg_engagement_rate)));if(c.error)card.append(node("p",c.error+" "+safe(c.hint,""),"muted"));niche.append(card);});
-  visual.append(node("p","A análise interpretativa visual requer GEMINI_API_KEY.","muted"));ideas.append(node("p","Configure GEMINI_API_KEY para gerar sugestões personalizadas.","muted"));return;
+  visual.append(node("p","A análise interpretativa visual requer serviço de IA.","muted"));ideas.append(node("p","Configure serviço de IA para gerar sugestões personalizadas.","muted"));return;
  }
  const b=ai.auditoria_bio||{};addList(bio,"Pontos fortes",b.pontos_fortes);addList(bio,"Melhorias recomendadas",b.melhorias);
  (b.sugestoes_bio||[]).forEach((suggestion,i)=>{
@@ -362,7 +362,7 @@ function lines(posts){
   return [((marker?marker+" ":"")+(index+1)+". "+safe(p.media_type||p.mediaType,"POST")+" | "+safe(p.timestamp)), "Engajamento: "+percent(p.engagement_rate??p.engagementRate),"Curtidas: "+number(p.like_count??p.likesCount)+" | Comentários: "+number(p.comments_count??p.commentsCount),"Visualizações: "+number(p.view_count??p.viewCount??p.videoViewCount),"Legenda: "+exportedCaption,"Link: "+safe(p.permalink,"não disponível")].join("\n");
  }).join("\n\n");
 }
-function briefing(d){return ["RADAR SOCIAL DEAB — BRIEFING E AUDITORIA DE INSTAGRAM","","CONTEXTO: "+safe(d.niche_context,"Não informado"),"PERFIL PRINCIPAL: @"+d.profile.username,"Nome: "+safe(d.profile.name),"Bio: "+safe(d.profile.biography),"Link: "+safe(d.profile.website),"Seguidores: "+number(d.profile.followers_count),"Posts: "+number(d.profile.media_count),"Média curtidas: "+number(d.metrics_summary.average_likes),"Média comentários: "+number(d.metrics_summary.average_comments),"Engajamento médio: "+percent(d.metrics_summary.avg_engagement_rate),"","CONCORRENTES / REFERÊNCIAS",JSON.stringify(cleanCompetitors(d.competitors),null,2),"","ANÁLISE GEMINI",JSON.stringify(d.ai_analysis||{status:"Não configurada",warning:d.ai_warning||"GEMINI_API_KEY ausente"},null,2),"","TODOS OS POSTS (ENGAJAMENTO DECRESCENTE)",lines(d.posts),"","NEXT ACTIONS E CALENDÁRIO EDITORIAL",JSON.stringify(actionsAndCalendar(d),null,2),"","INSTRUÇÃO: Separe fatos de hipóteses. A partir dos dados, refine o posicionamento, calendário editorial de 30 dias, ideias de posts, roteiros de Reels, CTAs e oportunidades orgânicas. Não invente métricas."].join("\n");}
+function briefing(d){return ["RADAR SOCIAL DEAB — BRIEFING E AUDITORIA DE INSTAGRAM","","CONTEXTO: "+safe(d.niche_context,"Não informado"),"PERFIL PRINCIPAL: @"+d.profile.username,"Nome: "+safe(d.profile.name),"Bio: "+safe(d.profile.biography),"Link: "+safe(d.profile.website),"Seguidores: "+number(d.profile.followers_count),"Posts: "+number(d.profile.media_count),"Média curtidas: "+number(d.metrics_summary.average_likes),"Média comentários: "+number(d.metrics_summary.average_comments),"Engajamento médio: "+percent(d.metrics_summary.avg_engagement_rate),"","CONCORRENTES / REFERÊNCIAS",JSON.stringify(cleanCompetitors(d.competitors),null,2),"","ANÁLISE GEMINI",JSON.stringify(d.ai_analysis||{status:"Não configurada",warning:d.ai_warning||"serviço de IA ausente"},null,2),"","TODOS OS POSTS (ENGAJAMENTO DECRESCENTE)",lines(d.posts),"","NEXT ACTIONS E CALENDÁRIO EDITORIAL",JSON.stringify(actionsAndCalendar(d),null,2),"","INSTRUÇÃO: Separe fatos de hipóteses. A partir dos dados, refine o posicionamento, calendário editorial de 30 dias, ideias de posts, roteiros de Reels, CTAs e oportunidades orgânicas. Não invente métricas."].join("\n");}
 
 
 const BIO_ADMIN_KEY_STORAGE="radar_social_bio_admin_key";
