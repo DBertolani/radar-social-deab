@@ -44,7 +44,7 @@ footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}.advanc
 <section id="results" class="results">
 <section class="panel result-section"><h2>1. Raio-X do Perfil e Métricas</h2><div class="profile-head"><div><h3 id="profileName" class="profile-name">—</h3><div id="profileUsername" class="handle"></div></div><span id="aiBadge" class="tag">ANÁLISE</span></div><p id="profileBio" class="bio"></p><div class="muted" id="profileLink"></div>
 <div class="metrics"><div class="metric"><span>Seguidores</span><strong id="followers">—</strong></div><div class="metric"><span>Publicações</span><strong id="mediaCount">—</strong></div><div class="metric"><span>Média de curtidas</span><strong id="avgLikes">—</strong></div><div class="metric"><span>Média de comentários</span><strong id="avgComments">—</strong></div><div class="metric"><span>Engajamento médio</span><strong id="avgEngagement">—</strong></div></div></section>
-<section class="panel result-section"><h2>2. Auditoria de Bio e Posicionamento</h2><div class="block"><h3>Auditoria da Bio e Link</h3><div id="bioAnalysis"><p class="muted">Aguardando análise.</p></div></div><div class="block"><h3 id="nicheTitle">Posicionamento e Comparativo com o Nicho</h3><div id="nicheAnalysis"><p class="muted">Aguardando análise.</p></div></div><div class="block"><h3>Comparativo de Concorrentes</h3><div id="competitorComparison" class="compare-wrap"><p class="muted">Informe referências para comparar.</p></div></div><div class="block"><h3>Análise Visual e de Conteúdo</h3><div id="visualAnalysis"><p class="muted">Aguardando análise.</p></div></div></section>
+<section class="panel result-section"><h2>2. Auditoria de Bio e Posicionamento</h2><div class="block"><h3>Auditoria da Bio e Link</h3><div id="bioAnalysis"><p class="muted">Aguardando análise.</p></div></div><div class="block"><h3 id="nicheTitle">Posicionamento e Comparativo com o Nicho</h3><div id="nicheAnalysis"><p class="muted">Aguardando análise.</p></div></div><div class="block"><h3>Hashtags Estratégicas Recomendadas</h3><div id="hashtagRecommendations"></div><button id="copyHashtags" type="button" class="small-button">Copiar hashtags</button><span id="hashtagCopyFeedback" class="copy-feedback" aria-live="polite"></span></div><div class="block"><h3>Comparativo de Concorrentes</h3><div id="competitorComparison" class="compare-wrap"><p class="muted">Informe referências para comparar.</p></div></div><div class="block"><h3>Análise Visual e de Conteúdo</h3><div id="visualAnalysis"><p class="muted">Aguardando análise.</p></div></div></section>
 <section class="panel result-section"><h2>3. Funil, Outliers e Publicações</h2><div id="funnelSummary" class="analytics-grid"></div><div id="postFilters" class="filter-row"><button type="button" data-filter="all" class="active">Todos os posts</button><button type="button" data-filter="winners">🔥 Fora da Curva</button><button type="button" data-filter="low">Menor desempenho</button></div><div id="postsList" class="post-grid"></div><div class="block"><h3>Publicações dos concorrentes</h3><div id="competitorPosts"></div></div></section>
 <section class="panel result-section"><h2>4. Plano de Ação Imediato e Calendário Editorial</h2><div id="nextActions" class="block"></div><h3>Calendário Editorial Semanal</h3><div id="weeklyCalendar" class="compare-wrap"></div><div class="post-tools"><button id="copyPlan" type="button" class="small-button">Copiar Plano + Calendário</button><span id="planCopyFeedback" class="copy-feedback" aria-live="polite"></span></div></section>
 <section class="panel result-section"><h2>5. Ideias de Posts, Roteiros de Reels e Legendas/Hashtags</h2><div id="ideasAnalysis" class="ideas-grid"></div><button id="copySummary" class="button copy" type="button">Copiar Briefing Completo para Gemini</button><div id="copyStatus" class="status" role="status" aria-live="polite"></div></section>
@@ -91,11 +91,10 @@ function copyButton(text,label="Copiar"){
  });
  wrap.append(button,feedback);return wrap;
 }
-function ideaCopyText(idea){
+function ideaCopyText(idea,data){
  const roteiro=Array.isArray(idea.roteiro)?idea.roteiro.map(x=>typeof x==="string"?x:[x.etapa||x.titulo||"",x.texto||x.descricao||""].filter(Boolean).join(": ")).join("\n"):String(idea.roteiro||"");
- const legenda=idea.legenda_otimizada||idea.sugestao_legenda||idea.legenda||"";
- const hashtags=idea.hashtags_locais_nicho||idea.hashtags||"";
- return ["GANCHO: "+safe(idea.gancho),"ROTEIRO:\n"+safe(roteiro),"CTA: "+safe(idea.cta),"LEGENDA SUGERIDA:\n"+safe(legenda),"HASHTAGS:\n"+(Array.isArray(hashtags)?hashtags.join(" "):safe(hashtags))].join("\n\n");
+ const legenda=idea.legenda_sugerida||idea.legenda_otimizada||idea.sugestao_legenda||idea.legenda||fallbackIdeaCaption(idea);
+ return ["GANCHO: "+safe(idea.gancho,"Gancho sugerido: "+safe(idea.tema)),"ROTEIRO:\n"+safe(roteiro||"Apresente o tema, demonstre uma solução e reforce o benefício."),"CTA: "+safe(idea.cta,"Salve e compartilhe."),"SUGESTÃO DE LEGENDA:\n"+safe(legenda),"HASHTAGS:\n"+ideaHashtags(idea,data||latest||{}).join(" ")].join("\n\n");
 }
 function localCaptionPackage(post,context,bio){
  const source=String(context||"")+" "+String(bio||"")+" "+String(post.caption||"");
@@ -186,10 +185,35 @@ function createPostCard(post,username){
  if(post.permalink&&validInstagramUrl(post.permalink)){const link=node("a","Ver publicação ↗");link.href=post.permalink;link.target="_blank";link.rel="noopener noreferrer";tools.append(link);}
  card.append(tools);return card;
 }
+function hashtagFallback(data){
+ const src=(String(data?.niche_context||"")+" "+String(data?.profile?.biography||"")).toLowerCase();
+ const clean=x=>String(x).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
+ const loc=String(data?.niche_context||"").match(/(?:em|de|no|na)\s+([A-Za-zÀ-ÿ ]{3,30})/i)?.[1]||"Brasil";
+ const tags=new Set(["#"+clean(loc)]);
+ [["cosmet","cosmeticos"],["maqui","maquiagem"],["perfum","perfumaria"],["skincare","skincare"],["estetic","estetica"],["beleza","beleza"],["acessor","acessorios"],["moda","moda"],["semijoia","semijoias"],["fitness","fitness"],["restaurante","gastronomia"]].forEach(([k,v])=>{if(src.includes(k))tags.add("#"+v);});
+ ["negocioslocais","empreendedorismo","compralocal","conteudodigital","achadinhos","dicas","instagrambrasil","pequenosnegocios","brasil"].forEach(x=>tags.add("#"+x));
+ return [...tags].slice(0,12);
+}
+function renderHashtagRecommendations(ai,data){
+ const root=$("hashtagRecommendations");if(!root)return;root.replaceChildren();
+ const tags=Array.isArray(ai?.hashtags_recomendadas)&&ai.hashtags_recomendadas.length?ai.hashtags_recomendadas:hashtagFallback(data);
+ const diagnosis=Array.isArray(ai?.diagnostico_hashtags)?ai.diagnostico_hashtags:[];
+ root.append(node("h4","Hashtags recomendadas"),node("p",tags.join(" ")),node("h4","Diagnóstico das hashtags atuais"));
+ if(diagnosis.length)addList(root,"Problemas identificados",diagnosis);
+ else root.append(node("p",ai?"Nenhum problema específico identificado nas legendas coletadas.":"Diagnóstico Gemini indisponível; base sugerida pelo contexto do perfil.","muted"));
+}
+function fallbackIdeaCaption(idea){return safe(idea.gancho,"Você já conhece esta dica?")+"\n\n"+safe(idea.tema,"Confira este conteúdo")+"\n\n"+safe(idea.cta,"Salve e compartilhe com alguém.");}
+function ideaHashtags(idea,data){
+ const values=Array.isArray(idea.hashtags)?idea.hashtags:typeof idea.hashtags==="string"?idea.hashtags.split(/\s+/):[];
+ const clean=[...new Set(values.map(x=>String(x).trim()).filter(x=>/^#[\p{L}\p{N}_]+$/u.test(x)))];
+ return clean.length>=6?clean.slice(0,8):hashtagFallback(data).slice(0,8);
+}
+
 function renderAI(ai,data){
  const bio=$("bioAnalysis"),niche=$("nicheAnalysis"),visual=$("visualAnalysis"),ideas=$("ideasAnalysis");if(!bio||!niche||!visual||!ideas)return;
  const hasCompetitors=(data.competitors||[]).length>0,nicheTitle=$("nicheTitle");
  [bio,niche,visual,ideas].forEach(x=>x.replaceChildren());
+ renderHashtagRecommendations(ai,data);
  nicheTitle.textContent=hasCompetitors?"Comparativo com o Nicho":"Posicionamento e Diferenciais Competitivos do Nicho";
  if(!ai){
   bio.append(node("p","Análise por IA não disponível. Os dados coletados estão apresentados; configure GEMINI_API_KEY nos secrets da Edge Function para gerar diagnóstico estratégico.","muted"));
@@ -207,10 +231,11 @@ function renderAI(ai,data){
  else{const positioning=ai.posicionamento_nicho_sem_concorrentes||[];if(positioning.length)addList(niche,"Oportunidades e diferenciais do segmento",positioning);else niche.append(node("p","A análise não retornou posicionamento específico para o segmento e a localização informados.","muted"));}
  const v=ai.analise_visual_conteudo||{};addList(visual,"Padrões visuais",v.padroes_visuais);addList(visual,"Formatos e temas",v.formatos_e_temas);addList(visual,"Oportunidades",v.oportunidades);addList(visual,"Observações sobre as imagens",v.observacoes_imagens);
  (ai.ideias_posts_reels||[]).forEach((idea,i)=>{
-  const card=node("article",undefined,"idea");card.append(node("span",idea.formato||"Conteúdo","pill"),node("h4",(i+1)+". "+safe(idea.tema)),node("p","Gancho: "+safe(idea.gancho)));
-  addList(card,"Roteiro",idea.roteiro);card.append(node("p","CTA: "+safe(idea.cta)),node("p","Objetivo: "+safe(idea.objetivo)));
-  const legenda=idea.legenda_otimizada||idea.sugestao_legenda||idea.legenda||"Não fornecida pelo Gemini",hashtags=idea.hashtags_locais_nicho||idea.hashtags||"Não fornecidas pelo Gemini";
-  card.append(node("h4","Sugestão de Legenda"),node("p",Array.isArray(legenda)?legenda.join("\n"):String(legenda)),node("h4","Hashtags"),node("p",Array.isArray(hashtags)?hashtags.join(" "):String(hashtags)),copyButton(ideaCopyText(idea)));
+  const card=node("article",undefined,"idea"),tags=ideaHashtags(idea,data);
+  const item={...idea,legenda_sugerida:idea.legenda_sugerida||idea.legenda_otimizada||idea.sugestao_legenda||idea.legenda||fallbackIdeaCaption(idea),hashtags:tags};
+  card.append(node("span",idea.formato||"Conteúdo","pill"),node("h4",(i+1)+". "+safe(idea.tema)),node("h4","Gancho"),node("p",safe(idea.gancho,"Gancho sugerido a partir do tema")));
+  addList(card,"Roteiro",Array.isArray(idea.roteiro)&&idea.roteiro.length?idea.roteiro:["Apresente "+safe(idea.tema)+".","Demonstre uma solução prática.","Finalize reforçando o benefício."]);
+  card.append(node("h4","CTA"),node("p",safe(idea.cta,"Convide a salvar, comentar ou chamar no direct.")),node("h4","Sugestão de Legenda"),node("p",item.legenda_sugerida),node("h4","Hashtags"),node("p",tags.join(" ")),copyButton(ideaCopyText(item,data),"Copiar pacote completo"));
   ideas.append(card);
  });
  if(!ideas.childElementCount)ideas.append(node("p","Nenhuma ideia retornada.","muted"));
@@ -232,13 +257,21 @@ function actionsAndCalendar(data){
  if(context)root.append(node("p","Contexto considerado: "+context,"muted"));
  if(unique.length)addList(root,"Next Actions — prioridades do diagnóstico",unique);
  else root.append(node("p",Object.keys(ai).length?"O diagnóstico não trouxe recomendações acionáveis suficientes.":"Next Actions indisponível: não há diagnóstico Gemini para personalizar as prioridades.","muted"));
- const days=["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"],sourceIdeas=ideas.filter(x=>x&&String(x.tema||"").trim());
- const calendar=sourceIdeas.length?days.map((day,i)=>{const idea=sourceIdeas[i%sourceIdeas.length];return [day,safe(idea.formato,"Não especificado"),safe(idea.objetivo,"Não especificado"),safe(idea.tema)+(i>=sourceIdeas.length?" — variação de abordagem":""),safe(idea.gancho,"Não informado")];}):[];
- const table=node("table",undefined,"calendar-table"),head=node("tr");["Dia","Formato","Objetivo","Tema recomendado pelo Gemini","Gancho"].forEach(x=>head.append(node("th",x)));table.append(head);
- if(calendar.length)calendar.forEach(row=>{const tr=node("tr");row.forEach(v=>tr.append(node("td",v)));table.append(tr);});
- else{const tr=node("tr"),td=node("td","Calendário não gerado: o Gemini não retornou ideias estruturadas para esta análise.");td.colSpan=5;tr.append(td);table.append(tr);}
- if(context){const caption=node("caption","Planejamento orientado pelo contexto: "+context);caption.style.captionSide="bottom";caption.style.textAlign="left";caption.style.padding="10px";caption.style.color="var(--muted)";table.append(caption);}
- $("weeklyCalendar").replaceChildren(table);return {actions:unique,calendar};
+ const pillars=["Descoberta/Achadinhos","Bastidores/Humanização","Demonstração/Tutorial","Oferta/Conversão"],sourceIdeas=ideas.filter(x=>x&&String(x.tema||"").trim());
+ const supplied=Array.isArray(ai.calendario_editorial)?ai.calendario_editorial:[];
+ const calendar=supplied.length?supplied.slice(0,30):Array.from({length:30},(_,i)=>{const idea=sourceIdeas[i%Math.max(1,sourceIdeas.length)]||{},w=Math.floor(i/7)+1;return {semana:"Semana "+w,dia:"Dia "+(i+1),pilar:pillars[i%4],formato:idea.formato||"Carrossel ou Reel",tema:idea.tema||"Conteúdo educativo — "+pillars[i%4],gancho:idea.gancho||"Você sabia? Confira esta dica.",cta:idea.cta||"Salve e compartilhe."};});
+ const calendarRoot=$("weeklyCalendar");calendarRoot.replaceChildren();
+ ["Semana 1","Semana 2","Semana 3","Semana 4"].forEach((week,wi)=>{
+  const entries=calendar.filter(x=>String(x.semana||"").toLowerCase()===week.toLowerCase()||String(x.semana||"")===String(wi+1));
+  const section=node("section",undefined,"calendar-week");section.append(node("h4",week+" — "+(wi===3?"Dias 22 a 30":"Dias "+(wi*7+1)+" a "+(wi*7+7))));
+  if(!entries.length){section.append(node("p","Sem itens nesta semana.","muted"));calendarRoot.append(section);return;}
+  const table=node("table",undefined,"calendar-table"),head=node("tr");["Dia","Pilar","Formato","Tema","Gancho","CTA"].forEach(x=>head.append(node("th",x)));table.append(head);
+  entries.forEach(item=>{const tr=node("tr");[item.dia,item.pilar,item.formato,item.tema,item.gancho,item.cta].forEach(v=>tr.append(node("td",safe(v))));table.append(tr);});
+  section.append(table);calendarRoot.append(section);
+ });
+ if(context)calendarRoot.append(node("p","Planejamento orientado pelo contexto: "+context,"muted"));
+ return {actions:unique,calendar};
+
 }
 function renderCompetitorPosts(items){const root=$("competitorPosts");if(!root)return;root.replaceChildren();(items||[]).forEach(c=>{if(c.error||!c.posts?.length)return;const section=node("section",undefined,"block");section.append(node("h4","@"+safe(c.profile?.username)));const grid=node("div",undefined,"post-grid");c.posts.forEach(post=>grid.append(createPostCard(post,c.profile?.username||"concorrente")));section.append(grid);root.append(section);});if(!root.childElementCount)root.append(node("p","Nenhuma publicação de concorrente disponível.","muted"));}
 function render(data){
@@ -340,6 +373,18 @@ $("suggestCompetitors")?.addEventListener("click",()=>{
  const googleTerms=["instagram",...detected.niche,detected.city].filter(Boolean).join(" ");
  const g=node("a","Google: "+googleTerms);g.href="https://www.google.com/search?q="+encodeURIComponent(googleTerms);g.target="_blank";g.rel="noopener noreferrer";g.className="suggestion";root.append(g);
 });
+
+$("copyPlan")?.addEventListener("click",async()=>{
+ const plan=$("nextActions"),calendar=$("weeklyCalendar"),feedback=$("planCopyFeedback");if(!plan||!calendar||!feedback)return;
+ const value="PLANO DE AÇÃO\n"+plan.innerText+"\n\nCALENDÁRIO EDITORIAL — 30 DIAS\n"+calendar.innerText;
+ try{await navigator.clipboard.writeText(value);feedback.textContent="Plano e calendário copiados.";}
+ catch{const area=node("textarea");area.value=value;document.body.append(area);area.select();const ok=document.execCommand("copy");area.remove();feedback.textContent=ok?"Plano e calendário copiados.":"Não foi possível copiar.";}
+ });
+$("copyHashtags")?.addEventListener("click",async()=>{
+ const feedback=$("hashtagCopyFeedback"),tags=Array.isArray(latest?.ai_analysis?.hashtags_recomendadas)&&latest.ai_analysis.hashtags_recomendadas.length?latest.ai_analysis.hashtags_recomendadas:hashtagFallback(latest||{});
+ const value=tags.join(" ");try{await navigator.clipboard.writeText(value);if(feedback)feedback.textContent="Hashtags copiadas.";}
+ catch{const area=node("textarea");area.value=value;document.body.append(area);area.select();const ok=document.execCommand("copy");area.remove();if(feedback)feedback.textContent=ok?"Hashtags copiadas.":"Não foi possível copiar.";}
+ });
 
 el.copy?.addEventListener("click",async()=>{if(!latest)return;const text=briefing(latest);try{await navigator.clipboard.writeText(text);status(el.copyStatus,"Briefing completo copiado.","success");}catch{const t=node("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";document.body.append(t);t.select();const ok=document.execCommand("copy");t.remove();status(el.copyStatus,ok?"Briefing copiado.":"Não foi possível copiar neste navegador.",ok?"success":"error");}});
 
