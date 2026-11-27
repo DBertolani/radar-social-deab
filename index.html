@@ -69,13 +69,13 @@ function modelScript(post,username){currentScript={post,username,steps:scriptFor
 function competitorSearchTerms(context,bio){
  const source=(String(context||"")+" "+String(bio||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
  const groups=[
-  {terms:["cosmetico","cosmeticos","skincare","perfumaria","perfume"],queries:["cosmeticos","skincare"]},
+  {terms:["cosmetico","cosmeticos","skincare","perfumaria","perfume"],queries:["cosmeticos"]},
   {terms:["maquiagem","makeup","maquiadora","maquiador"],queries:["maquiagem"]},
   {terms:["acessorio","acessorios","bijuteria","bijuterias","bolsa","bolsas"],queries:["acessorios"]},
-  {terms:["estetica","esteticista","beleza","salao","cabelo","unhas"],queries:["estetica","beleza"]},
-  {terms:["roupa","roupas","moda","vestuario","boutique"],queries:["moda","roupas"]},
+  {terms:["estetica","esteticista","beleza","salao","cabelo","unhas"],queries:["estetica"]},
+  {terms:["roupa","roupas","moda","vestuario","boutique"],queries:["moda"]},
   {terms:["joia","joias","semijoia","semijoias"],queries:["semijoias"]},
-  {terms:["academia","fitness","personal trainer","musculacao"],queries:["academia","fitness"]},
+  {terms:["academia","fitness","personal trainer","musculacao"],queries:["academia"]},
   {terms:[" restaurante","restaurante","lanchonete","doceria","confeitaria","gastronomia"],queries:["restaurantes","gastronomia"]}
  ];
  const matched=groups.filter(g=>g.terms.some(t=>source.includes(t))).flatMap(g=>g.queries);
