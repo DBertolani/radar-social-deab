@@ -139,9 +139,16 @@ const geminiSchema = {
     ideias_posts_reels: { type: "ARRAY", items: { type: "OBJECT", properties: {
       formato: { type: "STRING" }, tema: { type: "STRING" }, gancho: { type: "STRING" },
       roteiro: { type: "ARRAY", items: { type: "STRING" } }, cta: { type: "STRING" }, objetivo: { type: "STRING" },
-    }, required: ["formato", "tema", "gancho", "roteiro", "cta", "objetivo"] } },
+      legenda_sugerida: { type: "STRING" }, hashtags: { type: "ARRAY", items: { type: "STRING" } },
+    }, required: ["formato", "tema", "gancho", "roteiro", "cta", "objetivo", "legenda_sugerida", "hashtags"] } },
+    hashtags_recomendadas: { type: "ARRAY", items: { type: "STRING" } },
+    diagnostico_hashtags: { type: "ARRAY", items: { type: "STRING" } },
+    calendario_editorial: { type: "ARRAY", items: { type: "OBJECT", properties: {
+      semana: { type: "STRING" }, dia: { type: "STRING" }, pilar: { type: "STRING" }, formato: { type: "STRING" },
+      tema: { type: "STRING" }, gancho: { type: "STRING" }, cta: { type: "STRING" },
+    }, required: ["semana", "dia", "pilar", "formato", "tema", "gancho", "cta"] } },
   },
-  required: ["auditoria_bio", "comparativo_nicho", "posicionamento_nicho_sem_concorrentes", "analise_visual_conteudo", "ideias_posts_reels"],
+  required: ["auditoria_bio", "comparativo_nicho", "posicionamento_nicho_sem_concorrentes", "analise_visual_conteudo", "ideias_posts_reels", "hashtags_recomendadas", "diagnostico_hashtags", "calendario_editorial"],
 };
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -213,6 +220,10 @@ Analise a bio e o link. ${nicheInstruction} Avalie também padrões visuais e co
 ANÁLISE VISUAL OBRIGATÓRIA: compare diretamente as imagens dos posts de MAIOR engajamento (marcadas top_maior_engajamento) contra as imagens dos posts de MENOR engajamento (marcadas menor_engajamento). Identifique diferenças visuais concretas, por exemplo fotos reais, pessoas, rostos, bastidores, demonstrações e ambientes reais versus banners gráficos de fornecedor, artes escuras, peças promocionais ou layouts carregados. Não presuma que esses exemplos estão presentes: descreva somente o que efetivamente observar nas imagens anexadas. Explique quais padrões visuais parecem associados a maior engajamento e quais podem estar associados a menor engajamento, sem afirmar causalidade.
 As imagens são enviadas como partes inlineData na mesma solicitação. O manifesto abaixo identifica a ordem e a classificação das imagens anexadas. Se nenhuma imagem tiver sido anexada, declare a limitação e não invente observações visuais.
 Não invente fatos nem métricas. Indique claramente quando houver amostra pequena ou dados indisponíveis. Sugira exatamente 2 versões de bio, respeitando limites práticos do Instagram. Gere ideias aplicáveis de posts e roteiros de Reels em português brasileiro.
+HASHTAGS: cada ideia deve conter legenda_sugerida pronta para publicar, com quebras de linha intencionais e CTA claro, e hashtags com 6 a 8 tags corretas, sem duplicatas, combinando nicho e cidade/região quando comprovada no contexto, bio ou dados. Cada tag começa com # e não contém espaços.
+Preencha hashtags_recomendadas com 10 a 12 hashtags-base locais e de nicho, sem duplicatas. Não invente cidade; sem localização use tags nacionais e do segmento.
+Em diagnostico_hashtags, examine as legendas coletadas e aponte somente problemas observáveis: ## duplicado, espaços que quebram tags, erros ortográficos ou inconsistências. Se nada for detectado, retorne [].
+CALENDÁRIO EDITORIAL DE 30 DIAS: retorne exatamente 30 entradas em calendario_editorial, com Semana 1 (Dias 1–7), Semana 2 (Dias 8–14), Semana 3 (Dias 15–21) e Semana 4 (Dias 22–30). Alterne os pilares Descoberta/Achadinhos, Bastidores/Humanização, Demonstração/Tutorial e Oferta/Conversão ao longo das semanas. Não repita exatamente o mesmo tema/ideia dentro de uma semana; varie formato, ângulo, gancho e CTA. Cada item precisa de dia, pilar, formato, tema, gancho e CTA executáveis, sem inventar fatos do negócio.
 Retorne somente JSON seguindo o schema solicitado.
 MANIFESTO DAS IMAGENS ANEXADAS:
 ${JSON.stringify(imageManifest, null, 2)}
