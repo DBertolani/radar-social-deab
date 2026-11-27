@@ -41,7 +41,7 @@ footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}.advanc
 <section class="panel"><div class="profile-head"><div><h2 id="profileName" class="profile-name">—</h2><div id="profileUsername" class="handle"></div></div><span id="aiBadge" class="tag">ANÁLISE</span></div><p id="profileBio" class="bio"></p><div class="muted" id="profileLink"></div>
 <div class="metrics"><div class="metric"><span>Seguidores</span><strong id="followers">—</strong></div><div class="metric"><span>Publicações</span><strong id="mediaCount">—</strong></div><div class="metric"><span>Média de curtidas</span><strong id="avgLikes">—</strong></div><div class="metric"><span>Engajamento médio</span><strong id="avgEngagement">—</strong></div></div></section>
 <section class="panel"><h2>Diagnóstico da Bio e Link</h2><div id="bioAnalysis" class="block"><p class="muted">Aguardando análise.</p></div></section>
-<section class="panel"><h2>Comparativo com o Nicho</h2><div id="nicheAnalysis" class="block"><p class="muted">Aguardando análise.</p></div></section>
+<section class="panel"><h2 id="nicheTitle">Comparativo com o Nicho</h2><div id="nicheAnalysis" class="block"><p class="muted">Aguardando análise.</p></div></section>
 <section class="panel"><h2>Análise Visual e de Conteúdo</h2><div id="visualAnalysis" class="block"><p class="muted">Aguardando análise.</p></div><div class="block"><h3>Publicações coletadas e miniaturas</h3><div id="postsList" class="post-grid"></div></div></section>
 <section class="panel"><h2>Sugestões Práticas de Posts e Roteiros de Reels</h2><div id="ideasAnalysis" class="ideas-grid"></div><button id="copySummary" class="button copy" type="button">Copiar Briefing Completo para Gemini</button><div id="copyStatus" class="status" role="status" aria-live="polite"></div></section>
 </section><footer>Radar Social DEAB · Ambiente de Testes / Supabase
@@ -81,8 +81,8 @@ function createPostCard(post){
  if(permalink){card.href=permalink;card.target="_blank";card.rel="noopener noreferrer";card.setAttribute("aria-label","Abrir publicação no Instagram");}
  const mediaType=String(post.media_type||post.mediaType||"").toUpperCase();
  const isVideo=mediaType==="VIDEO"||mediaType==="REEL"||String(post.type||"").toUpperCase()==="VIDEO"||post.isVideo===true||/\.mp4(?:$|[?#])/i.test(String(post.media_url||post.url||""));
- const coverUrl=post.displayUrl||post.thumbnailUrl||post.thumbnail_url||
-  (!isVideo?post.media_url||post.url:null)||
+ const coverUrl=post.thumbnail_url||post.displayUrl||post.thumbnailUrl||
+  (isVideo?post.media_url:post.media_url||post.url)||
   (post.children||[]).find(x=>x.displayUrl||x.thumbnailUrl||x.thumbnail_url||x.media_url)?.displayUrl||
   (post.children||[]).find(x=>x.thumbnailUrl||x.thumbnail_url||x.media_url)?.thumbnailUrl||
   (post.children||[]).find(x=>x.thumbnail_url||x.media_url)?.thumbnail_url||
@@ -110,10 +110,13 @@ function createPostCard(post){
 function renderPosts(posts){const target=$("postsList");target.replaceChildren();if(!posts?.length){target.append(node("p","Nenhum post retornado.","muted"));return;}posts.forEach(p=>target.append(createPostCard(p)));}
 function renderAI(ai,data){
  const bio=$("bioAnalysis"),niche=$("nicheAnalysis"),visual=$("visualAnalysis"),ideas=$("ideasAnalysis");
+ const hasCompetitors=(data.competitors||[]).length>0;
+ const nicheTitle=$("nicheTitle");
  [bio,niche,visual,ideas].forEach(x=>x.replaceChildren());
+ nicheTitle.textContent=hasCompetitors?"Comparativo com o Nicho":"Posicionamento e Diferenciais Competitivos do Nicho";
  if(!ai){
   bio.append(node("p","Análise por IA não disponível. Os dados coletados estão apresentados; configure GEMINI_API_KEY nos secrets da Edge Function para gerar diagnóstico estratégico.","muted"));
-  if(!(data.competitors||[]).length)niche.append(node("p","Nenhum concorrente foi informado. Adicione até três perfis para comparar os indicadores.","muted"));
+  if(!hasCompetitors)niche.append(node("p","Nenhum concorrente foi informado. A análise de posicionamento estratégico por segmento e localização será gerada quando a análise Gemini estiver habilitada.","muted"));
   (data.competitors||[]).forEach(c=>{const card=node("article",undefined,"competitor");card.append(node("h4","@"+safe(c.profile?.username)));card.append(node("p","Seguidores: "+number(c.profile?.followers_count)+" · Posts: "+number(c.profile?.media_count),"post-meta"));card.append(node("p","Engajamento médio da amostra: "+percent(c.metrics_summary?.avg_engagement_rate)));if(c.error)card.append(node("p",c.error+" "+safe(c.hint,""),"muted"));niche.append(card);});
   visual.append(node("p","As miniaturas e métricas dos posts estão abaixo. A análise interpretativa requer GEMINI_API_KEY.","muted"));
   ideas.append(node("p","Configure GEMINI_API_KEY para gerar sugestões personalizadas de posts e roteiros de Reels.","muted"));
@@ -122,8 +125,14 @@ function renderAI(ai,data){
  const b=ai.auditoria_bio||{};addList(bio,"Pontos fortes",b.pontos_fortes);addList(bio,"Melhorias recomendadas",b.melhorias);
  (b.sugestoes_bio||[]).forEach((s,i)=>{bio.append(node("h4","Sugestão de bio "+(i+1)));bio.append(node("p",s));});
  const comps=ai.comparativo_nicho||[];
- if(!comps.length)niche.append(node("p","Nenhum comparativo retornado. Informe concorrentes para enriquecer a análise.","muted"));
- comps.forEach(c=>{const card=node("article",undefined,"competitor");card.append(node("h4","@"+safe(c.username)));addList(card,"Pontos fortes",c.pontos_fortes);addList(card,"Oportunidades",c.oportunidades);addList(card,"Diferenças observadas",c.diferencas_observadas);niche.append(card);});
+ if(hasCompetitors){
+  if(!comps.length)niche.append(node("p","Nenhum comparativo retornado para as referências informadas.","muted"));
+  comps.forEach(c=>{const card=node("article",undefined,"competitor");card.append(node("h4","@"+safe(c.username)));addList(card,"Pontos fortes",c.pontos_fortes);addList(card,"Oportunidades",c.oportunidades);addList(card,"Diferenças observadas",c.diferencas_observadas);niche.append(card);});
+ }else{
+  const positioning=ai.posicionamento_nicho_sem_concorrentes||[];
+  if(positioning.length)addList(niche,"Oportunidades e diferenciais do segmento",positioning);
+  else niche.append(node("p","A análise não retornou posicionamento específico para o segmento e a localização informados.","muted"));
+ }
  const v=ai.analise_visual_conteudo||{};addList(visual,"Padrões visuais",v.padroes_visuais);addList(visual,"Formatos e temas",v.formatos_e_temas);addList(visual,"Oportunidades",v.oportunidades);addList(visual,"Observações sobre as imagens",v.observacoes_imagens);
  (ai.ideias_posts_reels||[]).forEach((idea,i)=>{const card=node("article",undefined,"idea");card.append(node("span",idea.formato||"Conteúdo","pill"));card.append(node("h4",(i+1)+". "+safe(idea.tema)));card.append(node("p","Gancho: "+safe(idea.gancho)));addList(card,"Roteiro",idea.roteiro);card.append(node("p","CTA: "+safe(idea.cta)));card.append(node("p","Objetivo: "+safe(idea.objetivo)));ideas.append(card);});
  if(!ideas.childElementCount)ideas.append(node("p","Nenhuma ideia retornada.","muted"));
@@ -167,16 +176,23 @@ function cleanCompetitors(items){
   };
  });
 }
+function cleanCaption(value){
+ const lines=String(value||"").replace(/\\r\\n?/g,"\\n").split("\\n");
+ return lines.filter(line=>!/^\\s*\\.(?:\\s*\\.)*\\s*$/.test(line)).join("\\n").replace(/\\n{3,}/g,"\\n\\n").trim();
+}
 function lines(posts){
  const ordered=(posts||[]).map((post,index)=>({post,index,rate:Number(post.engagement_rate??post.engagementRate??0)})).sort((a,b)=>b.rate-a.rate);
  if(!ordered.length)return "Sem publicações.";
  const top=new Set(ordered.slice(0,3).map(x=>x.index));
  const low=new Set(ordered.slice(-3).map(x=>x.index));
+ const fullCaptionIndexes=new Set([...ordered.slice(0,5),...ordered.slice(-3)].map(x=>x.index));
  return ordered.map((entry,index)=>{
   const p=entry.post;
   const marker=top.has(entry.index)?"[TOP]":low.has(entry.index)?"[BAIXO]":"";
-  return [((marker?marker+" ":"")+(index+1)+". "+safe(p.media_type||p.mediaType,"POST")+" | "+safe(p.timestamp)), "Engajamento: "+percent(p.engagement_rate??p.engagementRate),"Curtidas: "+number(p.like_count??p.likesCount)+" | Comentários: "+number(p.comments_count??p.commentsCount),"Visualizações: "+number(p.view_count??p.viewCount??p.videoViewCount),"Legenda: "+safe(p.caption,"Sem legenda"),"Link: "+safe(p.permalink,"não disponível")].join("\n");
- }).join("\n\n");
+  const caption=cleanCaption(p.caption);
+  const exportedCaption=fullCaptionIndexes.has(entry.index)?(caption||"Sem legenda"):(caption.length>280?caption.slice(0,277).trimEnd()+"…":caption||"Sem legenda");
+  return [((marker?marker+" ":"")+(index+1)+". "+safe(p.media_type||p.mediaType,"POST")+" | "+safe(p.timestamp)), "Engajamento: "+percent(p.engagement_rate??p.engagementRate),"Curtidas: "+number(p.like_count??p.likesCount)+" | Comentários: "+number(p.comments_count??p.commentsCount),"Visualizações: "+number(p.view_count??p.viewCount??p.videoViewCount),"Legenda: "+exportedCaption,"Link: "+safe(p.permalink,"não disponível")].join("\\n");
+ }).join("\\n\\n");
 }
 function briefing(d){return ["RADAR SOCIAL DEAB — BRIEFING E AUDITORIA DE INSTAGRAM","","CONTEXTO: "+safe(d.niche_context,"Não informado"),"PERFIL PRINCIPAL: @"+d.profile.username,"Nome: "+safe(d.profile.name),"Bio: "+safe(d.profile.biography),"Link: "+safe(d.profile.website),"Seguidores: "+number(d.profile.followers_count),"Posts: "+number(d.profile.media_count),"Média curtidas: "+number(d.metrics_summary.average_likes),"Média comentários: "+number(d.metrics_summary.average_comments),"Engajamento médio: "+percent(d.metrics_summary.avg_engagement_rate),"","CONCORRENTES / REFERÊNCIAS",JSON.stringify(cleanCompetitors(d.competitors),null,2),"","ANÁLISE GEMINI",JSON.stringify(d.ai_analysis||{status:"Não configurada",warning:d.ai_warning||"GEMINI_API_KEY ausente"},null,2),"","TODOS OS POSTS (ENGAJAMENTO DECRESCENTE)",lines(d.posts),"","INSTRUÇÃO: Separe fatos de hipóteses. A partir dos dados, refine o posicionamento, calendário editorial de 30 dias, ideias de posts, roteiros de Reels, CTAs e oportunidades orgânicas. Não invente métricas."].join("\n");}
 el.form.addEventListener("submit",async ev=>{
