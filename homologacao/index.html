@@ -177,8 +177,8 @@ function cleanCompetitors(items){
  });
 }
 function cleanCaption(value){
- const lines=String(value||"").replace(/\\r\\n?/g,"\\n").split("\\n");
- return lines.filter(line=>!/^\\s*\\.(?:\\s*\\.)*\\s*$/.test(line)).join("\\n").replace(/\\n{3,}/g,"\\n\\n").trim();
+ const lines=String(value||"").replace(/\r\n?/g,"\n").split("\n");
+ return lines.filter(line=>!/^\s*\.(?:\s*\.)*\s*$/.test(line)).join("\n").replace(/\n{3,}/g,"\n\n").trim();
 }
 function lines(posts){
  const ordered=(posts||[]).map((post,index)=>({post,index,rate:Number(post.engagement_rate??post.engagementRate??0)})).sort((a,b)=>b.rate-a.rate);
@@ -191,8 +191,8 @@ function lines(posts){
   const marker=top.has(entry.index)?"[TOP]":low.has(entry.index)?"[BAIXO]":"";
   const caption=cleanCaption(p.caption);
   const exportedCaption=fullCaptionIndexes.has(entry.index)?(caption||"Sem legenda"):(caption.length>280?caption.slice(0,277).trimEnd()+"…":caption||"Sem legenda");
-  return [((marker?marker+" ":"")+(index+1)+". "+safe(p.media_type||p.mediaType,"POST")+" | "+safe(p.timestamp)), "Engajamento: "+percent(p.engagement_rate??p.engagementRate),"Curtidas: "+number(p.like_count??p.likesCount)+" | Comentários: "+number(p.comments_count??p.commentsCount),"Visualizações: "+number(p.view_count??p.viewCount??p.videoViewCount),"Legenda: "+exportedCaption,"Link: "+safe(p.permalink,"não disponível")].join("\\n");
- }).join("\\n\\n");
+  return [((marker?marker+" ":"")+(index+1)+". "+safe(p.media_type||p.mediaType,"POST")+" | "+safe(p.timestamp)), "Engajamento: "+percent(p.engagement_rate??p.engagementRate),"Curtidas: "+number(p.like_count??p.likesCount)+" | Comentários: "+number(p.comments_count??p.commentsCount),"Visualizações: "+number(p.view_count??p.viewCount??p.videoViewCount),"Legenda: "+exportedCaption,"Link: "+safe(p.permalink,"não disponível")].join("\n");
+ }).join("\n\n");
 }
 function briefing(d){return ["RADAR SOCIAL DEAB — BRIEFING E AUDITORIA DE INSTAGRAM","","CONTEXTO: "+safe(d.niche_context,"Não informado"),"PERFIL PRINCIPAL: @"+d.profile.username,"Nome: "+safe(d.profile.name),"Bio: "+safe(d.profile.biography),"Link: "+safe(d.profile.website),"Seguidores: "+number(d.profile.followers_count),"Posts: "+number(d.profile.media_count),"Média curtidas: "+number(d.metrics_summary.average_likes),"Média comentários: "+number(d.metrics_summary.average_comments),"Engajamento médio: "+percent(d.metrics_summary.avg_engagement_rate),"","CONCORRENTES / REFERÊNCIAS",JSON.stringify(cleanCompetitors(d.competitors),null,2),"","ANÁLISE GEMINI",JSON.stringify(d.ai_analysis||{status:"Não configurada",warning:d.ai_warning||"GEMINI_API_KEY ausente"},null,2),"","TODOS OS POSTS (ENGAJAMENTO DECRESCENTE)",lines(d.posts),"","INSTRUÇÃO: Separe fatos de hipóteses. A partir dos dados, refine o posicionamento, calendário editorial de 30 dias, ideias de posts, roteiros de Reels, CTAs e oportunidades orgânicas. Não invente métricas."].join("\n");}
 el.form.addEventListener("submit",async ev=>{
