@@ -11,14 +11,14 @@
       "destination": "/bio-home.html"
     },
     {
-      "source": "/:slug([a-zA-Z0-9-]+)",
+      "source": "/:slug((?!.*\\.(?:html|css|js|json|png|svg|ico)$)[^/]+)",
       "has": [
         {
           "type": "host",
           "value": "bio.deab.com.br"
         }
       ],
-      "destination": "/bio.html?u=:slug"
+      "destination": "/api/bio?u=:slug"
     },
     {
       "source": "/",
