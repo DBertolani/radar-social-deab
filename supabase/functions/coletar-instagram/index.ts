@@ -179,7 +179,7 @@ async function fetchImagePart(url: string): Promise<{ inlineData: { mimeType: st
 
 async function analyzeWithGemini(apiKey: string, primary: ReturnType<typeof shapeProfile>, competitorProfiles: Array<ReturnType<typeof shapeProfile> & { error?: string; hint?: string }>, nicheContext: string) {
   const mediaHighlights = [
-    ...primary.metrics_summary.top_posts.map((p: any) => ({ classificacao: "top_maior_engajamento", media_url: p.media_url, media_type: p.media_type, caption: p.caption, post_id: p.id })),
+    ...primary.metrics_summary.top_posts.map((p: any) => ({ classificacao: "top_maior_engajamento", media_url: p.media_url, media_type: p.media_type, caption: p.caption, post_id: p.id, children: p.children })),
     ...primary.metrics_summary.worst_posts.map((p: any) => ({ classificacao: "menor_engajamento", media_url: p.media_url, media_type: p.media_type, caption: p.caption, post_id: p.id })),
   ];
   const imageEntries = mediaHighlights.flatMap((post: any) => {
