@@ -357,7 +357,7 @@ function renderBioButtons(items){
  const root=$("bioButtons");root.replaceChildren();root._items=items;
  items.forEach((item,index)=>{
   const row=document.createElement("div");row.className="grid bio-extra-row";
-  const type=document.createElement("select");type.innerHTML='<option value="website">Site</option><option value="instagram">Instagram</option><option value="maps">Google Maps</option><option value="catalog">Catálogo</option><option value="link">Outro link</option>';type.value=item.type||"website";
+  const type=document.createElement("select");type.innerHTML='<option value="website">Site</option><option value="catalog">Catálogo</option><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="linkedin">LinkedIn</option><option value="youtube">YouTube</option><option value="tiktok">TikTok</option><option value="maps">Google Maps</option><option value="email">E-mail</option><option value="telefone">Telefone</option><option value="link">Outro link</option>';type.value=item.type||"website";
   const label=document.createElement("input");label.placeholder="Texto do botão";label.maxLength=70;label.value=item.label||"";
   const url=document.createElement("input");url.type="url";url.placeholder="URL completa (https://...)";url.value=item.url||"";
   const remove=document.createElement("button");remove.type="button";remove.className="small-button";remove.textContent="Remover";remove.addEventListener("click",()=>{items.splice(index,1);renderBioButtons(items);});
