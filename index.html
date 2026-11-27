@@ -613,7 +613,7 @@ async function publishBio(){
  const buttons=[],waUrl=bioWaUrl();
  if($("bioWaEnabled").checked){if(!$("bioWaPhone").value.replace(/\D/g,""))throw Error("Informe o número com DDD para ativar o WhatsApp.");buttons.push({type:"whatsapp",label:$("bioWaLabel").value.trim()||"Falar pelo WhatsApp",url:waUrl});}
  const extras=Array.from($("bioButtons").children).map(row=>{const f=row.querySelectorAll("select,input");return {type:f[0].value,label:f[1].value.trim(),url:f[2].value.trim()};}).filter(x=>x.label&&x.url);
- for(const item of extras){try{const u=new URL(item.url);if(!["https:","http:"].includes(u.protocol))throw 0;}catch{throw Error("Verifique a URL de um botão extra.");}}
+ for(const item of extras){if(item.type==="email"){if(!item.url.toLowerCase().startsWith("mailto:"))item.url="mailto:"+item.url;if(!/^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(item.url))throw Error("Informe um endereço de e-mail válido.");}else{try{const u=new URL(item.url);if(!["https:","http:"].includes(u.protocol))throw 0;}catch{throw Error("Verifique a URL de um botão extra.");}}}
  buttons.push(...extras);
  const libras=$("bioLibras").value.trim();if(libras&&!/^https?:\/\//i.test(libras))throw Error("Informe uma URL válida para o vídeo em LIBRAS.");
  const payload={p_admin_key:key,p_slug:slug,p_username:username,p_display_name:$("bioDisplayName").value.trim(),p_tagline:$("bioTagline").value.trim(),p_avatar_url:$("bioAvatar").value.trim()||null,p_theme_preset:$("bioTheme").value,p_accent_color:accent,p_buttons:buttons,p_libras_video_url:libras||null,p_active:true};
