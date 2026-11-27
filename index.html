@@ -5,13 +5,13 @@
 <meta name="theme-color" content="#10131b">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
 <meta name="description" content="Radar Social DEAB — análise estratégica de Instagram com Gemini.">
-<title>Radar Social DEAB — Homologação</title>
+<title>Radar Social DEAB</title>
 <style>
 :root{color-scheme:dark;--bg:#0c0f16;--surface:#141925;--surface2:#1b2230;--border:#293244;--text:#edf2fa;--muted:#9ba8bb;--accent:#8b7cff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#1b2140 0,var(--bg) 42rem);color:var(--text)}
 button,input,select,textarea{font:inherit}.shell{width:min(1160px,calc(100% - 32px));margin:auto;padding:34px 0 60px}
 header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}.eyebrow{color:#b6adff;font-size:.75rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}h1{margin:7px 0 0;font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.045em}
-.environment,.tag{border:1px solid #554b9a;background:#28234c;color:#d7d1ff;border-radius:999px;padding:7px 11px;font-size:.75rem;font-weight:800}
+.tag{border:1px solid #554b9a;background:#28234c;color:#d7d1ff;border-radius:999px;padding:7px 11px;font-size:.75rem;font-weight:800}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:21px;margin-bottom:16px;box-shadow:0 18px 55px #0002}.panel h2{margin:0 0 6px;font-size:1.08rem}.sub{color:var(--muted);margin:0 0 17px;font-size:.9rem;line-height:1.5}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.field{display:flex;flex-direction:column;gap:7px;min-width:0}.field.full{grid-column:1/-1}label{font-size:.82rem;color:#cbd4e2;font-weight:750}
 input,textarea{width:100%;min-height:45px;border:1px solid var(--border);border-radius:11px;padding:11px 13px;background:#0e131d;color:var(--text);outline:none}textarea{min-height:75px;resize:vertical}input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px #8b7cff22}
@@ -28,7 +28,7 @@ footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}.advanc
 </style>
 </head>
 <body><main class="shell">
-<header><div><div class="eyebrow">DEAB · Inteligência social</div><h1>Radar Social DEAB</h1></div><span class="environment">🧪 Homologação</span></header>
+<header><div><div class="eyebrow">DEAB · Inteligência social</div><h1>Radar Social DEAB</h1></div></header>
 <section class="panel"><h2>Análise estratégica de Instagram</h2><p class="sub">Colete o perfil principal, compare até três referências e receba diagnóstico com Gemini quando a secret GEMINI_API_KEY estiver configurada.</p>
 <form id="analysisForm" class="form-grid">
 <div class="field"><label for="username">Perfil Principal (@)</label><input id="username" maxlength="31" placeholder="@seu_perfil" required></div>
@@ -44,30 +44,17 @@ footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}.advanc
 <section class="panel"><h2 id="nicheTitle">Comparativo com o Nicho</h2><div id="nicheAnalysis" class="block"><p class="muted">Aguardando análise.</p></div></section>
 <section class="panel"><h2>Análise Visual e de Conteúdo</h2><div id="visualAnalysis" class="block"><p class="muted">Aguardando análise.</p></div><div class="block"><h3>Publicações coletadas e miniaturas</h3><div id="postsList" class="post-grid"></div></div></section>
 <section class="panel"><h2>Sugestões Práticas de Posts e Roteiros de Reels</h2><div id="ideasAnalysis" class="ideas-grid"></div><button id="copySummary" class="button copy" type="button">Copiar Briefing Completo para Gemini</button><div id="copyStatus" class="status" role="status" aria-live="polite"></div></section>
-</section><footer>Radar Social DEAB · Ambiente de Testes / Supabase
-<details class="advanced-settings">
- <summary>Configurações avançadas</summary>
- <div class="advanced-content">
-  <p class="sub">Credenciais públicas do Supabase. Os valores padrão já estão configurados; use estes campos somente para uma substituição emergencial neste navegador.</p>
-  <div class="grid">
-   <div class="field"><label for="supabaseUrl">SUPABASE_URL</label><input id="supabaseUrl" type="url" autocomplete="url"></div>
-   <div class="field"><label for="supabaseAnonKey">SUPABASE_ANON_KEY (publishable)</label><input id="supabaseAnonKey" type="password" autocomplete="off"></div>
-  </div>
- </div>
-</details>
-</footer></main>
+</section><footer>Radar Social DEAB — Inteligência de Conteúdo e Posicionamento</footer></main>
 <script>
 "use strict";
 const SUPABASE_URL="https://ywybqrunxreaencndztg.supabase.co";
 const SUPABASE_ANON_KEY="sb_publishable_3MB32qjyJD1IMrUHC9KEzA_t2e5L-tP";
-const KEYS={url:"radar_social_supabase_url",anon:"radar_social_supabase_anon_key"};
+
 const $=id=>document.getElementById(id);
-const el={url:$("supabaseUrl"),anon:$("supabaseAnonKey"),form:$("analysisForm"),username:$("username"),competitors:$("competitors"),context:$("nicheContext"),category:$("category"),button:$("analyzeButton"),status:$("status"),results:$("results"),copy:$("copySummary"),copyStatus:$("copyStatus")};
+const el={url:{value:SUPABASE_URL},anon:{value:SUPABASE_ANON_KEY},form:$("analysisForm"),username:$("username"),competitors:$("competitors"),context:$("nicheContext"),category:$("category"),button:$("analyzeButton"),status:$("status"),results:$("results"),copy:$("copySummary"),copyStatus:$("copyStatus")};
 let latest=null;
 // Credenciais salvas anteriormente continuam compatíveis; na ausência delas, usam-se os padrões fixos.
-el.url.value=localStorage.getItem(KEYS.url)||SUPABASE_URL;el.anon.value=localStorage.getItem(KEYS.anon)||SUPABASE_ANON_KEY;
-el.url.addEventListener("input",()=>localStorage.setItem(KEYS.url,el.url.value.trim()));
-el.anon.addEventListener("input",()=>localStorage.setItem(KEYS.anon,el.anon.value.trim()));
+
 const number=v=>new Intl.NumberFormat("pt-BR",{maximumFractionDigits:1}).format(Number(v||0));
 const percent=v=>Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
 const safe=(v,f="Não informado")=>v===null||v===undefined||v===""?f:String(v);
@@ -196,13 +183,11 @@ function lines(posts){
 }
 function briefing(d){return ["RADAR SOCIAL DEAB — BRIEFING E AUDITORIA DE INSTAGRAM","","CONTEXTO: "+safe(d.niche_context,"Não informado"),"PERFIL PRINCIPAL: @"+d.profile.username,"Nome: "+safe(d.profile.name),"Bio: "+safe(d.profile.biography),"Link: "+safe(d.profile.website),"Seguidores: "+number(d.profile.followers_count),"Posts: "+number(d.profile.media_count),"Média curtidas: "+number(d.metrics_summary.average_likes),"Média comentários: "+number(d.metrics_summary.average_comments),"Engajamento médio: "+percent(d.metrics_summary.avg_engagement_rate),"","CONCORRENTES / REFERÊNCIAS",JSON.stringify(cleanCompetitors(d.competitors),null,2),"","ANÁLISE GEMINI",JSON.stringify(d.ai_analysis||{status:"Não configurada",warning:d.ai_warning||"GEMINI_API_KEY ausente"},null,2),"","TODOS OS POSTS (ENGAJAMENTO DECRESCENTE)",lines(d.posts),"","INSTRUÇÃO: Separe fatos de hipóteses. A partir dos dados, refine o posicionamento, calendário editorial de 30 dias, ideias de posts, roteiros de Reels, CTAs e oportunidades orgânicas. Não invente métricas."].join("\n");}
 el.form.addEventListener("submit",async ev=>{
- ev.preventDefault();const base=el.url.value.trim().replace(/\/+$/,""),key=el.anon.value.trim(),username=el.username.value.trim().replace(/^@+/,"");
+ ev.preventDefault();const base=SUPABASE_URL,key=SUPABASE_ANON_KEY,username=el.username.value.trim().replace(/^@+/,"");
  const competitors=el.competitors.value.split(",").map(x=>x.trim().replace(/^@+/,"")).filter(Boolean);
- if(!/^https:\/\/[a-z0-9.-]+$/i.test(base)){status(el.status,"Informe uma SUPABASE_URL válida (https://...).","error");return;}
- if(!key){status(el.status,"Informe a SUPABASE_ANON_KEY.","error");return;}
  if(!/^[a-zA-Z0-9._]{1,30}$/.test(username)){status(el.status,"Informe um @username principal válido.","error");return;}
  if(competitors.length>3){status(el.status,"Informe no máximo 3 concorrentes/referências.","error");return;}
- localStorage.setItem(KEYS.url,base);localStorage.setItem(KEYS.anon,key);
+
  el.button.disabled=true;el.button.textContent="Coletando e analisando…";el.results.classList.remove("visible");
  try{
   const response=await fetch(base+"/functions/v1/coletar-instagram",{method:"POST",headers:{"Content-Type":"application/json","apikey":key,"Authorization":"Bearer "+key},body:JSON.stringify({username,category:el.category.value,competitors,niche_context:el.context.value.trim()})});
