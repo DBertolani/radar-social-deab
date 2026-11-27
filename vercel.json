@@ -1,28 +1,31 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
+      "src": "/",
       "has": [
         {
           "type": "host",
           "value": "bio.deab.com.br"
         }
       ],
-      "destination": "/bio-home.html"
+      "dest": "/bio-home.html"
     },
     {
-      "source": "/:slug((?!.*\\.(?:html|css|js|json|png|svg|ico)$)[^/]+)",
+      "handle": "filesystem"
+    },
+    {
+      "src": "/:slug((?!.*\\.(?:html|css|js|json|png|svg|ico)$)[^/]+)",
       "has": [
         {
           "type": "host",
           "value": "bio.deab.com.br"
         }
       ],
-      "destination": "/api/bio?u=:slug"
+      "dest": "/api/bio?u=$1"
     },
     {
-      "source": "/",
-      "destination": "/index.html"
+      "src": "/",
+      "dest": "/index.html"
     }
   ]
 }
