@@ -5,10 +5,10 @@
       "has": [
         {
           "type": "host",
-          "value": "bio.deab.com.br"
+          "value": "radar.deab.com.br"
         }
       ],
-      "destination": "/bio-home.html"
+      "destination": "/radar.html"
     },
     {
       "source": "/:slug((?!api/|radar\\.html|bio\\.html|bio-home\\.html|index\\.html|config\\.json|.*\\..*).*)",
@@ -19,10 +19,6 @@
         }
       ],
       "destination": "/api/bio?u=:slug"
-    },
-    {
-      "source": "/",
-      "destination": "/radar.html"
     }
   ]
 }
