@@ -75,8 +75,15 @@ module.exports = async function handler(req, res) {
     const title = escapeHtml(data.display_name || (data.username ? "@" + data.username : "Cartão Digital"));
     const description = escapeHtml(data.tagline || "Conheça os canais de contato de " + title + ".");
     const image = /^https?:\/\//i.test(data.avatar_url || "") ? escapeHtml(data.avatar_url) : "";
+    const initial = Array.from(String(data.display_name || data.username || "D").trim())[0] || "D";
+    const accent = /^#[0-9a-f]{6}$/i.test(data.accent_color || "") ? data.accent_color : "#8b7cff";
+    const faviconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="' + accent + '"/><text x="32" y="43" font-size="34" font-family="Arial,sans-serif" font-weight="700" text-anchor="middle" fill="#fff">' + escapeHtml(initial) + '</text></svg>';
+    const favicon = /^https?:\/\//i.test(data.avatar_url || "") ? escapeHtml(data.avatar_url) : "data:image/svg+xml;charset=utf-8," + encodeURIComponent(faviconSvg);
     const publicUrl = "https://bio.deab.com.br/" + encodeURIComponent(slug);
     const meta = [
+      '<link rel="icon" type="image/svg+xml" href="' + favicon + '">',
+      '<link rel="apple-touch-icon" href="' + favicon + '">',
+      '<link rel="canonical" href="' + escapeHtml(publicUrl) + '">',
       '<meta property="og:type" content="profile">',
       '<meta property="og:title" content="' + title + '">',
       '<meta property="og:description" content="' + description + '">',
