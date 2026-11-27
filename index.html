@@ -4,12 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Radar Social DEAB</title>
+  <title>DEAB Digital</title>
   <script>
     (function () {
-      window.location.replace("./radar.html" + window.location.search + window.location.hash);
+      "use strict";
+      var host = window.location.hostname.toLowerCase();
+      var isBioDomain = host === "bio.deab.com.br";
+      var destination = isBioDomain ? "/bio-home.html" : "/radar.html";
+      window.location.replace(destination + window.location.search + window.location.hash);
     })();
   </script>
 </head>
-<body><p>Abrindo Radar Social DEAB…</p></body>
+<body><p>Abrindo DEAB Digital…</p></body>
 </html>
