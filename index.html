@@ -66,6 +66,33 @@ function classifyFunnel(post){const t=String(post.caption||"").toLowerCase(),m=S
 function scriptFor(p){const cap=String(p.caption||"").replace(/https?:\/\/\S+/g,"").trim(),topic=cap.split(/[.!?\n]/).map(x=>x.trim()).find(x=>x.length>12)||"uma dúvida comum do público";return [["Gancho (0–3s)",cap.slice(0,110)||"Você também tem essa dúvida?"],["Contexto (3–10s)","Apresente a situação: "+topic+". Explique por que isso importa."],["Desenvolvimento (10–25s)","Mostre uma demonstração, 2 ou 3 orientações práticas ou um exemplo real. Use frases curtas e imagens de apoio."],["CTA (25–30s)",/orçamento|orcamento|agende|whatsapp|contrate/i.test(cap)?"Convide a pessoa a solicitar um orçamento ou chamar no direct.":"Peça para salvar, compartilhar ou enviar uma dúvida nos comentários."]];}
 let currentScript=null,activePostFilter="all";
 function modelScript(post,username){currentScript={post,username,steps:scriptFor(post)};$("scriptContent").replaceChildren();currentScript.steps.forEach(([h,t])=>{const box=node("div",undefined,"script-step");box.append(node("strong",h),node("p",t));$("scriptContent").append(box);});$("scriptModal").classList.add("open");$("scriptCopyStatus").className="status";}
+function competitorSearchTerms(context,bio){
+ const source=(String(context||"")+" "+String(bio||"")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+ const groups=[
+  {terms:["cosmetico","cosmeticos","skincare","perfumaria","perfume"],queries:["cosmeticos","skincare"]},
+  {terms:["maquiagem","makeup","maquiadora","maquiador"],queries:["maquiagem"]},
+  {terms:["acessorio","acessorios","bijuteria","bijuterias","bolsa","bolsas"],queries:["acessorios"]},
+  {terms:["estetica","esteticista","beleza","salao","cabelo","unhas"],queries:["estetica","beleza"]},
+  {terms:["roupa","roupas","moda","vestuario","boutique"],queries:["moda","roupas"]},
+  {terms:["joia","joias","semijoia","semijoias"],queries:["semijoias"]},
+  {terms:["academia","fitness","personal trainer","musculacao"],queries:["academia","fitness"]},
+  {terms:[" restaurante","restaurante","lanchonete","doceria","confeitaria","gastronomia"],queries:["restaurantes","gastronomia"]}
+ ];
+ const matched=groups.filter(g=>g.terms.some(t=>source.includes(t))).flatMap(g=>g.queries);
+ const niche=[...new Set(matched)].slice(0,3);
+ const locationSource=String(context||"")+" "+String(bio||"");
+ const match=locationSource.match(/(?:atendendo em|atende em|regiao de|região de|\bem\b|\bno\b|\bna\b)\s+([\p{L}][\p{L} -]{2,45})/iu);
+ let city=match?match[1]:"";
+ city=city.split(/[\/,;.!?()\n]|\s+(?:para|com|e|no|na|em|atendendo|atende|rj|sp|mg|es|brasil)\b/i)[0].trim();
+ city=city.replace(/\s+(?:rj|sp|mg|es|brasil)$/i,"").trim();
+ city=city.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9 -]/g,"").replace(/\s+/g," ").trim();
+ if(!niche.length){
+  const fallback=source.match(/\b(cosmeticos?|maquiagem|acessorios?|estetica|beleza|moda|roupas|semijoias|fitness|restaurantes?)\b/);
+  if(fallback)niche.push(fallback[1]);
+ }
+ return {niche:niche.length?niche:["negocios locais"],city};
+}
+
 function mediaKind(post){
  const type=String(post.media_type||post.mediaType||"").toUpperCase();
  if(type==="CAROUSEL_ALBUM"||type==="CAROUSEL")return "CARROSSEL";
@@ -80,7 +107,12 @@ function mediaFallback(post,kind){
 }
 function createPostCard(post,username){
  const card=node("article",undefined,"post-card"),kind=mediaKind(post),media=node("div",undefined,"post-media"),imageUrl=post.thumbnail_url||post.media_url;
- if(imageUrl){try{const u=new URL(imageUrl);if(u.protocol!=="https:")throw new Error("URL inválida");const img=node("img");img.className="thumb";img.src=u.href;img.alt="Miniatura "+kind.toLowerCase();img.referrerPolicy="no-referrer";img.loading="lazy";img.onerror=()=>{if(img.isConnected)img.replaceWith(mediaFallback(post,kind));};media.append(img);}catch{media.append(mediaFallback(post,kind));}}
+ const mediaUrl=String(post.media_url||"");
+ const videoWithoutThumbnail=String(post.media_type||post.mediaType||"").toUpperCase()==="VIDEO"&&!post.thumbnail_url;
+ const videoFile=/\.(?:mp4|mov|webm)(?:[?#].*)?$/i.test(mediaUrl)||/\.(?:mp4|mov|webm)(?:[?#].*)?$/i.test(String(imageUrl||""));
+ if(videoWithoutThumbnail||videoFile){
+  media.append(mediaFallback(post,kind==="IMAGEM"?"REEL / VÍDEO":kind));
+ }else if(imageUrl){try{const u=new URL(imageUrl);if(u.protocol!=="https:")throw new Error("URL inválida");const img=node("img");img.className="thumb";img.src=u.href;img.alt="Miniatura "+kind.toLowerCase();img.referrerPolicy="no-referrer";img.loading="lazy";img.onerror=()=>{if(img.isConnected)img.replaceWith(mediaFallback(post,kind));};media.append(img);}catch{media.append(mediaFallback(post,kind));}}
  else media.append(mediaFallback(post,kind));
  card.append(media,node("span",kind,"pill"),node("span",classifyFunnel(post)+" de Funil","pill"));
  if(post._outlier)card.append(node("span","🔥 Fora da Curva","post-badge"));
@@ -225,7 +257,18 @@ $("postFilters").addEventListener("click",ev=>{const b=ev.target.closest("button
 $("closeScript").addEventListener("click",()=>$("scriptModal").classList.remove("open"));
 $("scriptModal").addEventListener("click",ev=>{if(ev.target.id==="scriptModal")ev.currentTarget.classList.remove("open");});
 $("copyScript").addEventListener("click",async()=>{if(!currentScript)return;const text=currentScript.steps.map(([h,t])=>h+"\n"+t).join("\n\n");try{await navigator.clipboard.writeText(text);status($("scriptCopyStatus"),"Roteiro copiado para a área de transferência.","success");}catch{status($("scriptCopyStatus"),"Não foi possível copiar neste navegador.","error");}});
-$("suggestCompetitors").addEventListener("click",()=>{const username=$("username").value.trim().replace(/^@+/,""),context=$("nicheContext").value.trim(),bio=latest?.profile?.biography||"";const terms=(context+" "+bio).toLowerCase().match(/[a-zá-ú]{4,}/g)||[];const keywords=[...new Set(terms)].filter(x=>!["para","com","uma","que","dos","das","serviços","servicos","sobre","mais","pelo","pela"].includes(x)).slice(0,5);const q=keywords.join(" ")||username;const root=$("competitorSuggestions");root.replaceChildren();const note=node("p","Sugestões de pesquisa — abra o Instagram, identifique perfis profissionais do mesmo segmento e adicione os @ encontrados. Nenhum perfil é presumido ou inventado.","muted");root.append(note);const a=node("a","Pesquisar no Instagram: "+(q||"nicho"));a.href="https://www.instagram.com/explore/search/keyword/?q="+encodeURIComponent(q);a.target="_blank";a.rel="noopener noreferrer";a.className="suggestion";root.append(a);});
+$("suggestCompetitors").addEventListener("click",()=>{
+ const context=$("nicheContext").value.trim(),bio=latest?.profile?.biography||"",detected=competitorSearchTerms(context,bio);
+ const queries=detected.niche.map(term=>[term,detected.city].filter(Boolean).join(" "));
+ if(!queries.length)queries.push(detected.city?("negocios locais "+detected.city):"negocios locais");
+ const root=$("competitorSuggestions");root.replaceChildren();
+ root.append(node("p","Pesquisas curtas para localizar perfis comerciais reais do mesmo segmento. Confira os perfis encontrados e adicione manualmente os @ relevantes.","muted"));
+ queries.forEach(q=>{
+  const a=node("a","Instagram: "+q);a.href="https://www.instagram.com/explore/search/keyword/?q="+encodeURIComponent(q);a.target="_blank";a.rel="noopener noreferrer";a.className="suggestion";root.append(a);
+ });
+ const googleTerms=["instagram",...detected.niche,detected.city].filter(Boolean).join(" ");
+ const g=node("a","Google: "+googleTerms);g.href="https://www.google.com/search?q="+encodeURIComponent(googleTerms);g.target="_blank";g.rel="noopener noreferrer";g.className="suggestion";root.append(g);
+});
 
 el.copy.addEventListener("click",async()=>{if(!latest)return;const text=briefing(latest);try{await navigator.clipboard.writeText(text);status(el.copyStatus,"Briefing completo copiado.","success");}catch{const t=node("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";document.body.append(t);t.select();const ok=document.execCommand("copy");t.remove();status(el.copyStatus,ok?"Briefing copiado.":"Não foi possível copiar neste navegador.",ok?"success":"error");}});
 </script></body></html>
