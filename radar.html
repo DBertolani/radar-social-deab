@@ -471,30 +471,22 @@ async function loadPublishedBioCards(){
  }finally{clearTimeout(timeout)}
 }
 function suggestBioTexts(){
- const name=$("bioDisplayName").value.trim()||latest?.profile?.name||latest?.profile?.username||$("bioUsername").value.trim().replace(/^@+/,"")||"Seu negócio";
+ const profileName=String(latest?.profile?.name||"").trim();
+ const currentName=$("bioDisplayName").value.trim();
+ const username=$("bioUsername").value.trim().replace(/^@+/,"");
+ const name=(profileName||currentName||username||"Seu negócio").replace(/\s+/g," ").trim();
  const keywords=String($("nicheContext")?.value||latest?.niche_context||latest?.profile?.biography||"").replace(/\s+/g," ").trim();
  const ai=latest?.ai_analysis?.auditoria_bio||{};
- const strengths=(ai.pontos_fortes||[]).map(x=>String(x).trim()).filter(Boolean);
- const aiBios=(ai.sugestoes_bio||[]).map(x=>String(x).trim()).filter(Boolean);
- const escapeRegExp=value=>String(value).replace(/[.*+?^${}()|[\]\\]/g,"\\function suggestBioTexts(){
- const name=$("bioDisplayName").value.trim()||latest?.profile?.name||latest?.profile?.username||"Seu negócio";
- const keywords=String($("nicheContext")?.value||latest?.niche_context||latest?.profile?.biography||"").replace(/\s+/g," ").trim();
- const ai=latest?.ai_analysis?.auditoria_bio||{},strengths=(ai.pontos_fortes||[]).map(x=>String(x).trim()).filter(Boolean);
- const aiBios=(ai.sugestoes_bio||[]).map(x=>String(x).trim()).filter(Boolean);
- const focus=(strengths.slice(0,2).join(" · ")||keywords||"qualidade, confiança e atendimento");
- const bioOptions=[
-  {title:"Autoridade",bio:aiBios[0]||name+" | "+focus+". Conteúdo, orientação e soluções para você.",message:"Olá! Conheci "+name+" pelo Instagram e gostaria de saber mais sobre o trabalho e as soluções oferecidas."},
-  {title:"Orçamento Rápido",bio:name+" | Atendimento ágil e soluções sob medida. Peça seu orçamento pelo WhatsApp.",message:"Olá, "+name+"! Gostaria de solicitar um orçamento. Poderia me passar informações, valores e disponibilidade?"},
-  {title:"Institucional",bio:aiBios[1]||name+" | "+(keywords||"Soluções e atendimento com confiança.")+". Entre em contato e conheça nossos serviços.",message:"Olá! Gostaria de conhecer melhor "+name+", os serviços oferecidos e como funciona o atendimento."}
- ];
- const root=$("bioTextSuggestions");root.replaceChildren();
- bioOptions.forEach(option=>{const button=document.createElement("button");button.type="button";button.className="bio-text-option";const title=document.createElement("strong");title.textContent=option.title;const preview=document.createElement("span");preview.textContent=option.bio+"\nWhatsApp: "+option.message;button.append(title,preview);button.addEventListener("click",()=>{$("bioTagline").value=option.bio.slice(0,220);$("bioWaMessage").value=option.message;status($("bioPublishStatus"),"Texto de bio e mensagem de WhatsApp aplicados. Você pode editar antes de publicar.","success");});root.append(button);});
-}
-async function loadExistingBio(){");
- const removeName=value=>String(value||"").replace(new RegExp("^\\s*"+escapeRegExp(name)+"\\s*(?:[|—–:,-]\\s*)?","i"),"").trim();
+ const strengths=(ai.pontos_fortes||[]).map(x=>String(x||"").trim()).filter(Boolean);
+ const aiBios=(ai.sugestoes_bio||[]).map(x=>String(x||"").trim()).filter(Boolean);
+ const removeLeadingName=value=>{
+  let valueText=String(value||"").trim();
+  if(valueText.toLocaleLowerCase("pt-BR").startsWith(name.toLocaleLowerCase("pt-BR")))valueText=valueText.slice(name.length).replace(/^\s*[|—–:,-]\s*/,"");
+  return valueText;
+ };
  const focus=strengths.slice(0,2).join(" · ")||keywords||"qualidade, confiança e atendimento";
- const authority=removeName(aiBios[0])||focus+". Conteúdo, orientação e soluções para você.";
- const institutional=removeName(aiBios[1])||((keywords&&removeName(keywords))||"Soluções e atendimento com confiança.")+". Entre em contato e conheça nossos serviços.";
+ const authority=removeLeadingName(aiBios[0])||focus+". Conteúdo, orientação e soluções para você.";
+ const institutional=removeLeadingName(aiBios[1])||(keywords||"Soluções e atendimento com confiança.")+". Entre em contato e conheça nossos serviços.";
  const options=[
   {title:"Autoridade",name,bio:authority,message:"Olá! Conheci "+name+" pelo Instagram e gostaria de saber mais sobre o trabalho e as soluções oferecidas."},
   {title:"Orçamento Rápido",name,bio:"Atendimento ágil e soluções sob medida. Peça seu orçamento pelo WhatsApp.",message:"Olá, "+name+"! Gostaria de solicitar um orçamento. Poderia me passar informações, valores e disponibilidade?"},
@@ -504,7 +496,7 @@ async function loadExistingBio(){");
  options.forEach(option=>{
   const button=document.createElement("button");button.type="button";button.className="bio-text-option";
   const title=document.createElement("strong");title.textContent=option.title;
-  const preview=document.createElement("span");preview.textContent=option.name+"\n"+option.bio+"\nWhatsApp: "+option.message;
+  const preview=document.createElement("span");preview.textContent=option.name+"\\n"+option.bio+"\\nWhatsApp: "+option.message;
   button.append(title,preview);
   button.addEventListener("click",()=>{
    $("bioDisplayName").value=option.name;
