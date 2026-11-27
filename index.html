@@ -259,7 +259,7 @@ function actionsAndCalendar(data){
  else root.append(node("p",Object.keys(ai).length?"O diagnóstico não trouxe recomendações acionáveis suficientes.":"Next Actions indisponível: não há diagnóstico Gemini para personalizar as prioridades.","muted"));
  const pillars=["Descoberta/Achadinhos","Bastidores/Humanização","Demonstração/Tutorial","Oferta/Conversão"],sourceIdeas=ideas.filter(x=>x&&String(x.tema||"").trim());
  const supplied=Array.isArray(ai.calendario_editorial)?ai.calendario_editorial:[];
- const calendar=supplied.length?supplied.slice(0,30):Array.from({length:30},(_,i)=>{const idea=sourceIdeas[i%Math.max(1,sourceIdeas.length)]||{},w=Math.floor(i/7)+1;return {semana:"Semana "+w,dia:"Dia "+(i+1),pilar:pillars[i%4],formato:idea.formato||"Carrossel ou Reel",tema:idea.tema||"Conteúdo educativo — "+pillars[i%4],gancho:idea.gancho||"Você sabia? Confira esta dica.",cta:idea.cta||"Salve e compartilhe."};});
+ const calendar=supplied.length?supplied.slice(0,30):Array.from({length:30},(_,i)=>{const idea=sourceIdeas[i%Math.max(1,sourceIdeas.length)]||{},w=Math.min(4,Math.floor(i/7)+1);return {semana:"Semana "+w,dia:"Dia "+(i+1),pilar:pillars[i%4],formato:idea.formato||"Carrossel ou Reel",tema:idea.tema||"Conteúdo educativo — "+pillars[i%4],gancho:idea.gancho||"Você sabia? Confira esta dica.",cta:idea.cta||"Salve e compartilhe."};});
  const calendarRoot=$("weeklyCalendar");calendarRoot.replaceChildren();
  ["Semana 1","Semana 2","Semana 3","Semana 4"].forEach((week,wi)=>{
   const entries=calendar.filter(x=>String(x.semana||"").toLowerCase()===week.toLowerCase()||String(x.semana||"")===String(wi+1));
