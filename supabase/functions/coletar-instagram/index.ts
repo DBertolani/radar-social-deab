@@ -131,7 +131,8 @@ const geminiSchema = {
       formatos_e_temas: { type: "ARRAY", items: { type: "STRING" } },
       oportunidades: { type: "ARRAY", items: { type: "STRING" } },
       observacoes_imagens: { type: "ARRAY", items: { type: "STRING" } },
-    }, required: ["padroes_visuais", "formatos_e_temas", "oportunidades", "observacoes_imagens"] },
+      comparacao_imagens_maior_menor_engajamento: { type: "ARRAY", items: { type: "STRING" } },
+    }, required: ["padroes_visuais", "formatos_e_temas", "oportunidades", "observacoes_imagens", "comparacao_imagens_maior_menor_engajamento"] },
     ideias_posts_reels: { type: "ARRAY", items: { type: "OBJECT", properties: {
       formato: { type: "STRING" }, tema: { type: "STRING" }, gancho: { type: "STRING" },
       roteiro: { type: "ARRAY", items: { type: "STRING" } }, cta: { type: "STRING" }, objetivo: { type: "STRING" },
@@ -140,29 +141,98 @@ const geminiSchema = {
   required: ["auditoria_bio", "comparativo_nicho", "analise_visual_conteudo", "ideias_posts_reels"],
 };
 
-async function analyzeWithGemini(apiKey: string, primary: ReturnType<typeof shapeProfile>, competitors: Array<ReturnType<typeof shapeProfile>>, nicheContext: string) {
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function isMp4Url(value: string): boolean {
+  try { return new URL(value).pathname.toLowerCase().endsWith(".mp4"); }
+  catch { return /\.mp4(?:$|[?#])/i.test(value); }
+}
+
+async function fetchImagePart(url: string): Promise<{ inlineData: { mimeType: string; data: string } } | null> {
+  if (!url || isMp4Url(url)) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return null;
+    const response = await fetch(parsed, { headers: { Accept: "image/*" } });
+    if (!response.ok) {
+      console.warn("Imagem não baixada para análise Gemini:", response.status, parsed.hostname);
+      return null;
+    }
+    const mimeType = (response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    if (!mimeType.startsWith("image/")) return null;
+    const buffer = new Uint8Array(await response.arrayBuffer());
+    // Limite defensivo para não exceder o payload da chamada Gemini.
+    if (!buffer.length || buffer.length > 8 * 1024 * 1024) return null;
+    return { inlineData: { mimeType, data: bytesToBase64(buffer) } };
+  } catch (error) {
+    console.warn("Falha ao baixar imagem para Gemini:", error);
+    return null;
+  }
+}
+
+async function analyzeWithGemini(apiKey: string, primary: ReturnType<typeof shapeProfile>, competitorProfiles: Array<ReturnType<typeof shapeProfile> & { error?: string; hint?: string }>, nicheContext: string) {
   const mediaHighlights = [
-    ...primary.metrics_summary.top_posts.map((p: any) => ({ classificacao: "top", media_url: p.media_url, media_type: p.media_type, caption: p.caption })),
-    ...primary.metrics_summary.worst_posts.map((p: any) => ({ classificacao: "menor_engajamento", media_url: p.media_url, media_type: p.media_type, caption: p.caption })),
+    ...primary.metrics_summary.top_posts.map((p: any) => ({ classificacao: "top_maior_engajamento", media_url: p.media_url, media_type: p.media_type, caption: p.caption, post_id: p.id })),
+    ...primary.metrics_summary.worst_posts.map((p: any) => ({ classificacao: "menor_engajamento", media_url: p.media_url, media_type: p.media_type, caption: p.caption, post_id: p.id })),
   ];
+  const imageEntries = mediaHighlights.flatMap((post: any) => {
+    if (post.media_type === "VIDEO" || isMp4Url(String(post.media_url || ""))) return [];
+    const urls = [post.media_url, ...(post.children || []).map((child: any) => child.media_url)]
+      .filter((url: unknown): url is string => typeof url === "string" && /^https:\/\//i.test(url) && !isMp4Url(url));
+    return urls.slice(0, 1).map(url => ({ ...post, image_url: url }));
+  }).slice(0, 6);
+
+  const imageParts = await Promise.all(imageEntries.map(async (entry: any) => ({
+    entry,
+    part: await fetchImagePart(entry.image_url),
+  })));
+  const validImages = imageParts.filter(item => item.part !== null);
+  const imageManifest = validImages.map((item, index) => ({
+    indice_parte_imagem: index + 1,
+    classificacao: item.entry.classificacao,
+    post_id: item.entry.post_id,
+    media_type: item.entry.media_type,
+    caption: item.entry.caption || "",
+  }));
   const prompt = `Você é estrategista sênior de Instagram. Faça uma análise fundamentada nos dados fornecidos. Contexto adicional: ${nicheContext || "Não informado"}.
-Analise a bio e o link, compare o perfil principal aos concorrentes/referências, e avalie padrões visuais e conteúdo. As URLs de mídia são referências para identificação dos posts; não afirme ter visto imagens quando a URL estiver ausente ou não puder ser acessada. Não invente fatos nem métricas. Indique claramente quando houver amostra pequena ou dados indisponíveis. Sugira exatamente 2 versões de bio, respeitando limites práticos do Instagram. Gere ideias aplicáveis de posts e roteiros de Reels em português brasileiro.
+Analise a bio e o link, compare o perfil principal aos concorrentes/referências, e avalie padrões visuais e conteúdo.
+ANÁLISE VISUAL OBRIGATÓRIA: compare diretamente as imagens dos posts de MAIOR engajamento (marcadas top_maior_engajamento) contra as imagens dos posts de MENOR engajamento (marcadas menor_engajamento). Identifique diferenças visuais concretas, por exemplo fotos reais, pessoas, rostos, bastidores, demonstrações e ambientes reais versus banners gráficos de fornecedor, artes escuras, peças promocionais ou layouts carregados. Não presuma que esses exemplos estão presentes: descreva somente o que efetivamente observar nas imagens anexadas. Explique quais padrões visuais parecem associados a maior engajamento e quais podem estar associados a menor engajamento, sem afirmar causalidade.
+As imagens são enviadas como partes inlineData na mesma solicitação. O manifesto abaixo identifica a ordem e a classificação das imagens anexadas. Se nenhuma imagem tiver sido anexada, declare a limitação e não invente observações visuais.
+Não invente fatos nem métricas. Indique claramente quando houver amostra pequena ou dados indisponíveis. Sugira exatamente 2 versões de bio, respeitando limites práticos do Instagram. Gere ideias aplicáveis de posts e roteiros de Reels em português brasileiro.
 Retorne somente JSON seguindo o schema solicitado.
-DADOS:
-${JSON.stringify({ perfil_principal: primary, concorrentes, imagens_top3_e_piores3: mediaHighlights }, null, 2)}`;
+MANIFESTO DAS IMAGENS ANEXADAS:
+${JSON.stringify(imageManifest, null, 2)}
+DADOS DOS PERFIS:
+${JSON.stringify({ perfil_principal: primary, concorrentes_coletados: competitorProfiles, imagens_top3_e_piores3: mediaHighlights }, null, 2)}`;
+  const parts: Array<Record<string, unknown>> = [{ text: prompt }];
+  for (const item of validImages) parts.push(item.part as Record<string, unknown>);
+
   const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      contents: [{ role: "user", parts }],
       generationConfig: { responseMimeType: "application/json", responseSchema: geminiSchema, temperature: 0.4 },
     }),
   });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error?.message || "Falha na API Gemini.");
-  const text = payload.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("");
-  if (!text) throw new Error("Gemini não retornou conteúdo estruturado.");
-  return JSON.parse(text);
+  const responseBody = await response.text();
+  let payload: any = {};
+  try { payload = responseBody ? JSON.parse(responseBody) : {}; }
+  catch { payload = { raw_response: responseBody }; }
+  if (!response.ok) {
+    const detail = payload.error?.message || payload.message || responseBody || "Resposta vazia da API Gemini.";
+    throw new Error(`Gemini HTTP ${response.status} (${response.statusText}): ${String(detail).slice(0, 2500)}`);
+  }
+  const responseText = payload.candidates?.[0]?.content?.parts?.map((p: any) => p.text || "").join("");
+  if (!responseText) throw new Error("Gemini não retornou conteúdo estruturado. Resposta: " + JSON.stringify(payload).slice(0, 1500));
+  return JSON.parse(responseText);
 }
 
 Deno.serve(async (req: Request) => {
