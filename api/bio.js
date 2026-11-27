@@ -81,7 +81,6 @@ module.exports = async function handler(req, res) {
     const favicon = /^https?:\/\//i.test(data.avatar_url || "") ? escapeHtml(data.avatar_url) : "data:image/svg+xml;charset=utf-8," + encodeURIComponent(faviconSvg);
     const publicUrl = "https://bio.deab.com.br/" + encodeURIComponent(slug);
     const meta = [
-      '<link rel="icon" type="image/svg+xml" href="' + favicon + '">',
       '<link rel="apple-touch-icon" href="' + favicon + '">',
       '<link rel="canonical" href="' + escapeHtml(publicUrl) + '">',
       '<meta property="og:type" content="profile">',
@@ -94,7 +93,8 @@ module.exports = async function handler(req, res) {
       '<meta name="twitter:description" content="' + description + '">'
     ].filter(Boolean).join("\n");
 
-    let html = template.replace("</head>", meta + "\n</head>");
+    let html = template.replace(/<link rel="icon"[^>]*>/i, '<link rel="icon" type="image/svg+xml" href="' + favicon + '">');
+    html = html.replace("</head>", meta + "\n</head>");
     html = html.replace(/<title>[^<]*<\/title>/i, "<title>" + title + " | DEAB</title>");
     html = html.replace("<script>\n(function(){", "<script>window.__BIO_DATA__=" + jsonForHtml(data) + ";\n(function(){");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
