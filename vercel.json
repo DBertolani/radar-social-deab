@@ -5,7 +5,17 @@
       "has": [
         {
           "type": "host",
-          "value": "radar.deab.com.br"
+          "value": "bio.deab.com.br"
+        }
+      ],
+      "destination": "/bio-home.html"
+    },
+    {
+      "source": "/",
+      "missing": [
+        {
+          "type": "host",
+          "value": "bio.deab.com.br"
         }
       ],
       "destination": "/radar.html"
