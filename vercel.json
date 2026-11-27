@@ -11,7 +11,7 @@
       "destination": "/bio-home.html"
     },
     {
-      "source": "/:slug((?!.*\\.(?:html|css|js|json|png|svg|ico)$)[^/]+)",
+      "source": "/:slug([a-zA-Z0-9-]+)",
       "has": [
         {
           "type": "host",
