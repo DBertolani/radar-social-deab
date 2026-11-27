@@ -1,0 +1,5 @@
+{
+  "ambiente": "producao",
+  "projeto_supabase": "Sistemas-Dev",
+  "prefixo_tabelas": "radar_social_"
+}
