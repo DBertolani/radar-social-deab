@@ -11,12 +11,13 @@ type Media = {
   caption?: string;
   media_type?: string;
   media_url?: string;
+  thumbnail_url?: string;
   permalink?: string;
   timestamp?: string;
   like_count?: number;
   comments_count?: number;
   view_count?: number;
-  children?: { data?: Array<{ media_url?: string; media_type?: string }> };
+  children?: { data?: Array<{ media_url?: string; thumbnail_url?: string; media_type?: string }> };
 };
 type Profile = {
   id: string;
@@ -87,8 +88,8 @@ function shapeProfile(p: Profile, category?: string) {
 }
 
 async function fetchDiscovery(username: string, igUserId: string, token: string): Promise<Profile> {
-  // media_url é opcional na resposta. thumbnail_url não é solicitado para evitar erro #100.
-  const mediaFields = "id,caption,media_type,media_url,permalink,timestamp,like_count,comments_count,view_count,children{media_url,media_type}";
+  // thumbnail_url fornece a capa estática de vídeos/Reels quando disponível na Graph API.
+  const mediaFields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count,view_count,children{media_url,thumbnail_url,media_type}";
   const discovery = "business_discovery.username(" + username + "){id,username,name,biography,website,profile_picture_url,followers_count,media_count,media.limit(20){" + mediaFields + "}}";
   const url = new URL("https://graph.facebook.com/v27.0/" + igUserId);
   url.searchParams.set("fields", discovery);
@@ -122,6 +123,7 @@ const geminiSchema = {
       },
       required: ["pontos_fortes", "melhorias", "sugestoes_bio"],
     },
+    posicionamento_nicho_sem_concorrentes: { type: "ARRAY", items: { type: "STRING" } },
     comparativo_nicho: { type: "ARRAY", items: { type: "OBJECT", properties: {
       username: { type: "STRING" }, pontos_fortes: { type: "ARRAY", items: { type: "STRING" } },
       oportunidades: { type: "ARRAY", items: { type: "STRING" } }, diferencas_observadas: { type: "ARRAY", items: { type: "STRING" } },
@@ -138,7 +140,7 @@ const geminiSchema = {
       roteiro: { type: "ARRAY", items: { type: "STRING" } }, cta: { type: "STRING" }, objetivo: { type: "STRING" },
     }, required: ["formato", "tema", "gancho", "roteiro", "cta", "objetivo"] } },
   },
-  required: ["auditoria_bio", "comparativo_nicho", "analise_visual_conteudo", "ideias_posts_reels"],
+  required: ["auditoria_bio", "comparativo_nicho", "posicionamento_nicho_sem_concorrentes", "analise_visual_conteudo", "ideias_posts_reels"],
 };
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -201,8 +203,12 @@ async function analyzeWithGemini(apiKey: string, primary: ReturnType<typeof shap
     media_type: item.entry.media_type,
     caption: item.entry.caption || "",
   }));
+  const hasCompetitors = competitorProfiles.length > 0;
+  const nicheInstruction = hasCompetitors
+    ? "Há concorrentes/referências informados: faça o comparativo apenas com os perfis efetivamente coletados e preencha comparativo_nicho. Deixe posicionamento_nicho_sem_concorrentes como array vazio."
+    : "NENHUM CONCORRENTE FOI INFORMADO. Não preencha comparativo_nicho com avisos, placeholders ou mensagens de dados indisponíveis: retorne comparativo_nicho como array vazio. Em posicionamento_nicho_sem_concorrentes, apresente de 4 a 6 observações estratégicas concretas sobre posicionamento e diferenciais competitivos possíveis do nicho, considerando o segmento e a localização/objetivo descritos no contexto e os dados do próprio perfil. Não invente concorrentes, estatísticas locais ou fatos específicos; diferencie oportunidades estratégicas de fatos comprovados.";
   const prompt = `Você é estrategista sênior de Instagram. Faça uma análise fundamentada nos dados fornecidos. Contexto adicional: ${nicheContext || "Não informado"}.
-Analise a bio e o link, compare o perfil principal aos concorrentes/referências, e avalie padrões visuais e conteúdo.
+Analise a bio e o link. ${nicheInstruction} Avalie também padrões visuais e conteúdo.
 ANÁLISE VISUAL OBRIGATÓRIA: compare diretamente as imagens dos posts de MAIOR engajamento (marcadas top_maior_engajamento) contra as imagens dos posts de MENOR engajamento (marcadas menor_engajamento). Identifique diferenças visuais concretas, por exemplo fotos reais, pessoas, rostos, bastidores, demonstrações e ambientes reais versus banners gráficos de fornecedor, artes escuras, peças promocionais ou layouts carregados. Não presuma que esses exemplos estão presentes: descreva somente o que efetivamente observar nas imagens anexadas. Explique quais padrões visuais parecem associados a maior engajamento e quais podem estar associados a menor engajamento, sem afirmar causalidade.
 As imagens são enviadas como partes inlineData na mesma solicitação. O manifesto abaixo identifica a ordem e a classificação das imagens anexadas. Se nenhuma imagem tiver sido anexada, declare a limitação e não invente observações visuais.
 Não invente fatos nem métricas. Indique claramente quando houver amostra pequena ou dados indisponíveis. Sugira exatamente 2 versões de bio, respeitando limites práticos do Instagram. Gere ideias aplicáveis de posts e roteiros de Reels em português brasileiro.
