@@ -456,7 +456,7 @@ async function publishBio(){
 $("openBioEditor").addEventListener("click",openBioEditor);$("closeBioEditor").addEventListener("click",()=>bioEditorOpen(false));
 $("bioEditorModal").addEventListener("click",e=>{if(e.target===$("bioEditorModal"))bioEditorOpen(false)});
 $("loadBioExisting").addEventListener("click",async()=>{const b=$("loadBioExisting");b.disabled=true;try{await loadExistingBio()}catch(e){status($("bioPublishStatus"),e.message,"error")}finally{b.disabled=false}});
-$("addBioButton").addEventListener("click",()=>{const a=$("bioButtons")._items||[];a.push({type:"website",label:"Site",url:""});renderBioButtons(a)});
+$("addBioButton").addEventListener("click",()=>{});
 $("bioAvatar").addEventListener("input",e=>bioPhotoPreview(e.target.value));
 $("bioColorSwatches").addEventListener("click",e=>{const b=e.target.closest("button[data-color]");if(b)setBioAccent(b.dataset.color,false)});
 $("bioAccent").addEventListener("input",e=>setBioAccent(e.target.value,false));
@@ -640,7 +640,7 @@ function renderBioButtons(items){
   const url=document.createElement("input");url.type="text";url.inputMode="url";url.placeholder="https://... ou e-mail/telefone";url.value=item.url||"";
   const preview=document.createElement("img");preview.alt="Favicon do domínio";preview.hidden=true;
   const refresh=()=>{const src=favicon(url.value);preview.hidden=!src;if(src)preview.src=src;else preview.removeAttribute("src");};refresh();url.addEventListener("input",refresh);
-  type.addEventListener("change",()=>{const old=type.dataset.previous||initial;if(!label.value.trim()||label.value.trim()===defaults[old])label.value=defaults[type.value];type.dataset.previous=type.value;});
+  type.addEventListener("change",()=>{const old=type.dataset.previous||initial;if(!label.value.trim()||label.value.trim()===defaults[old]||label.value.trim()===((typeOptions.find(x=>x[0]===old)||[])[1]||"")||label.value.trim()==="Site"||label.value.trim()==="Google Maps")label.value=defaults[type.value];type.dataset.previous=type.value;});
   const actions=document.createElement("div");actions.className="bio-extra-actions";
   const act=(txt,title,disabled,fn)=>{const b=document.createElement("button");b.type="button";b.textContent=txt;b.title=title;b.setAttribute("aria-label",title);b.disabled=disabled;b.addEventListener("click",fn);return b;};
   actions.append(act("↑","Subir",index===0,()=>{[items[index-1],items[index]]=[items[index],items[index-1]];renderBioButtons(items);}),act("↓","Descer",index===items.length-1,()=>{[items[index+1],items[index]]=[items[index],items[index+1]];renderBioButtons(items);}),act("✕","Remover",false,()=>{items.splice(index,1);renderBioButtons(items);}));
@@ -648,9 +648,9 @@ function renderBioButtons(items){
   const urlField=field("URL / destino",url),wrap=document.createElement("div");wrap.className="bio-url-preview";wrap.append(preview,url);urlField.append(wrap);card.append(field("Tipo",type),field("Texto do botão",label),urlField,actions);root.append(card);
  });
 }
-function applyBioSuggestions(){const state=window.latest;if(!state||!state.profile)return;const p=state.profile,name=p.name||p.username||"meu negócio",s=state.ai_analysis&&state.ai_analysis.auditoria_bio&&state.ai_analysis.auditoria_bio.sugestoes_bio,tagline=(Array.isArray(s)&&s.find(x=>String(x||"").trim()))||p.biography||"";byId("bioTagline").value=String(tagline).slice(0,220);const niche=String(state.niche_context||(byId("nicheContext")&&byId("nicheContext").value)||"").trim();byId("bioWaMessage").value="Olá! Vim pelo Instagram de "+name+(niche?" ("+niche.slice(0,100)+")":"")+" e gostaria de mais informações.";}
+function applyBioSuggestions(){const state=(typeof latest!=='undefined'?latest:null);if(!state||!state.profile)return;const p=state.profile,name=p.name||p.username||"meu negócio",s=state.ai_analysis&&state.ai_analysis.auditoria_bio&&state.ai_analysis.auditoria_bio.sugestoes_bio,tagline=(Array.isArray(s)&&s.find(x=>String(x||"").trim()))||p.biography||"";byId("bioTagline").value=String(tagline).slice(0,220);const niche=String(state.niche_context||(byId("nicheContext")&&byId("nicheContext").value)||"").trim();byId("bioWaMessage").value="Olá! Vim pelo Instagram de "+name+(niche?" ("+niche.slice(0,100)+")":"")+" e gostaria de mais informações.";}
 function openBioEditorDirect(){
- const state=window.latest,p=(state&&state.profile)||null,username=String((p&&p.username)||"").replace(/^@+/,"").toLowerCase(),name=(p&&p.name)||username||"";
+ const state=(typeof latest!=='undefined'?latest:null),p=(state&&state.profile)||null,username=String((p&&p.username)||"").replace(/^@+/,"").toLowerCase(),name=(p&&p.name)||username||"";
  byId("bioSlug").value=username?username.replace(/[^a-z0-9-]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"").slice(0,50):"";byId("bioUsername").value=username;byId("bioDisplayName").value=name;byId("bioTagline").value=String((p&&p.biography)||"").slice(0,220);
  byId("bioAvatar").value=(p&&p.profile_picture_url)||"";if(typeof bioPhotoPreview==="function")bioPhotoPreview((p&&p.profile_picture_url)||"");byId("bioTheme").value="essencial";if(typeof setBioAccent==="function")setBioAccent(p&&typeof suggestedBioColor==="function"?suggestedBioColor(p):"#8b5cf6",!!p);
  byId("bioLibras").value="";byId("bioWaEnabled").checked=true;byId("bioWhatsappFields").hidden=false;byId("bioWaPhone").value="";byId("bioWaLabel").value="Falar pelo WhatsApp";byId("bioWaMessage").value=p?"Olá! Vim pelo Instagram de "+name+" e gostaria de mais informações.":"Olá! Gostaria de mais informações sobre seus serviços.";
