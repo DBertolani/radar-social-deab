@@ -54,9 +54,7 @@ const $=id=>document.getElementById(id);
 const el={url:{value:SUPABASE_URL},anon:{value:SUPABASE_ANON_KEY},form:$("analysisForm"),username:$("username"),competitors:$("competitors"),context:$("nicheContext"),category:$("category"),button:$("analyzeButton"),status:$("status"),results:$("results"),copy:$("copySummary"),copyStatus:$("copyStatus")};
 let latest=null;
 // Credenciais salvas anteriormente continuam compatíveis; na ausência delas, usam-se os padrões fixos.
-el.url.value=localStorage.getItem(KEYS.url)||SUPABASE_URL;el.anon.value=localStorage.getItem(KEYS.anon)||SUPABASE_ANON_KEY;
-el.url.addEventListener("input",()=>localStorage.setItem(KEYS.url,el.url.value.trim()));
-el.anon.addEventListener("input",()=>localStorage.setItem(KEYS.anon,el.anon.value.trim()));
+
 const number=v=>new Intl.NumberFormat("pt-BR",{maximumFractionDigits:1}).format(Number(v||0));
 const percent=v=>Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%";
 const safe=(v,f="Não informado")=>v===null||v===undefined||v===""?f:String(v);
@@ -185,10 +183,8 @@ function lines(posts){
 }
 function briefing(d){return ["RADAR SOCIAL DEAB — BRIEFING E AUDITORIA DE INSTAGRAM","","CONTEXTO: "+safe(d.niche_context,"Não informado"),"PERFIL PRINCIPAL: @"+d.profile.username,"Nome: "+safe(d.profile.name),"Bio: "+safe(d.profile.biography),"Link: "+safe(d.profile.website),"Seguidores: "+number(d.profile.followers_count),"Posts: "+number(d.profile.media_count),"Média curtidas: "+number(d.metrics_summary.average_likes),"Média comentários: "+number(d.metrics_summary.average_comments),"Engajamento médio: "+percent(d.metrics_summary.avg_engagement_rate),"","CONCORRENTES / REFERÊNCIAS",JSON.stringify(cleanCompetitors(d.competitors),null,2),"","ANÁLISE GEMINI",JSON.stringify(d.ai_analysis||{status:"Não configurada",warning:d.ai_warning||"GEMINI_API_KEY ausente"},null,2),"","TODOS OS POSTS (ENGAJAMENTO DECRESCENTE)",lines(d.posts),"","INSTRUÇÃO: Separe fatos de hipóteses. A partir dos dados, refine o posicionamento, calendário editorial de 30 dias, ideias de posts, roteiros de Reels, CTAs e oportunidades orgânicas. Não invente métricas."].join("\n");}
 el.form.addEventListener("submit",async ev=>{
- ev.preventDefault();const base=el.url.value.trim().replace(/\/+$/,""),key=el.anon.value.trim(),username=el.username.value.trim().replace(/^@+/,"");
+ ev.preventDefault();const base=SUPABASE_URL,key=SUPABASE_ANON_KEY,username=el.username.value.trim().replace(/^@+/,"");
  const competitors=el.competitors.value.split(",").map(x=>x.trim().replace(/^@+/,"")).filter(Boolean);
- if(!/^https:\/\/[a-z0-9.-]+$/i.test(base)){status(el.status,"Informe uma SUPABASE_URL válida (https://...).","error");return;}
- if(!key){status(el.status,"Informe a SUPABASE_ANON_KEY.","error");return;}
  if(!/^[a-zA-Z0-9._]{1,30}$/.test(username)){status(el.status,"Informe um @username principal válido.","error");return;}
  if(competitors.length>3){status(el.status,"Informe no máximo 3 concorrentes/referências.","error");return;}
 
