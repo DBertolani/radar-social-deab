@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#10131b">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%238b5cf6%22/%3E%3Ctext x=%2250%25%22 y=%2270%25%22 font-size=%2265%22 text-anchor=%22middle%22 fill=%22white%22%3ED%3C/text%3E%3C/svg%3E"><text y=%22.9em%22 font-size=%2290%22>📋</text></svg>">
 <meta name="description" content="Radar Social DEAB — análise estratégica de Instagram com Gemini.">
 <title>Radar Social DEAB — Homologação</title>
 <style>
@@ -48,7 +48,7 @@ footer{text-align:center;color:#738096;font-size:.76rem;padding-top:18px}.advanc
 <section class="panel result-section"><h2>2. Auditoria de Bio e Posicionamento</h2><div class="block" id="bioEditorLaunch"><h3>Cartão Digital DEAB</h3><p class="muted">Publique uma página própria com os canais de contato do perfil analisado.</p><button id="openBioEditor" class="small-button" type="button">Criar / Editar Cartão Digital (Link na Bio)</button></div><div class="block"><h3>Auditoria da Bio e Link</h3><div id="bioAnalysis"><p class="muted">Aguardando análise.</p></div></div><div id="clientGoals" class="client-goals-card" hidden></div><div class="comparison-group"><div class="block"><h3>Comparativo de Concorrentes</h3><div id="competitorComparison" class="compare-wrap"><p class="muted">Informe referências para comparar.</p></div></div><div class="block"><h3 id="nicheTitle">Posicionamento e Comparativo com o Nicho</h3><div id="nicheAnalysis"><p class="muted">Aguardando análise.</p></div></div></div><div class="block"><h3>Hashtags Estratégicas Recomendadas</h3><div id="hashtagRecommendations"></div><button id="copyHashtags" type="button" class="small-button">Copiar hashtags</button><span id="hashtagCopyFeedback" class="copy-feedback" aria-live="polite"></span></div><div class="block"><h3>Análise Visual e de Conteúdo</h3><div id="visualAnalysis"><p class="muted">Aguardando análise.</p></div></div></section>
 <section class="panel result-section"><h2>3. Funil, Outliers e Publicações</h2><div id="funnelSummary" class="analytics-grid"></div><div id="postFilters" class="filter-row"><button type="button" data-filter="all" class="active">Todos os posts</button><button type="button" data-filter="winners">🔥 Fora da Curva</button><button type="button" data-filter="low">Menor desempenho</button></div><div id="postsList" class="post-grid"></div><div class="block"><h3>Publicações dos concorrentes</h3><div id="competitorPosts"></div></div></section>
 <section class="panel result-section"><h2>4. Plano de Ação Imediato e Calendário Editorial</h2><div id="nextActions" class="block"></div><h3>Calendário Editorial Semanal</h3><div id="weeklyCalendar" class="compare-wrap"></div><div class="post-tools"><button id="copyPlan" type="button" class="small-button">Copiar Plano + Calendário</button><span id="planCopyFeedback" class="copy-feedback" aria-live="polite"></span></div></section>
-<section class="panel result-section"><h2>5. Ideias de Posts, Roteiros de Reels e Legendas/Hashtags</h2><div id="ideasAnalysis" class="ideas-grid"></div><button id="copySummary" class="button copy" type="button">Copiar Briefing Completo para Gemini</button><div id="copyStatus" class="status" role="status" aria-live="polite"></div></section>
+<section class="panel result-section"><h2>5. Ideias de Posts, Roteiros de Reels e Legendas/Hashtags</h2><div id="ideasAnalysis" class="ideas-grid"></div><div class="post-tools"><button id="copySummary" class="button copy" type="button">Copiar Briefing Completo para Gemini</button><button id="downloadReport" class="small-button" type="button">Baixar Relatório CSV</button></div><div id="copyStatus" class="status" role="status" aria-live="polite"></div></section>
 </section><footer>Radar Social DEAB · Ambiente de Testes / Supabase
 <details class="advanced-settings">
  <summary>Configurações avançadas (clique para expandir)</summary>
@@ -417,7 +417,7 @@ function fillBioForm(d){
  $("bioLibras").value=d.libras_video_url||"";
  const buttons=Array.isArray(d.buttons)?d.buttons:[];
  const main=buttons.find(b=>b.type==="whatsapp");
- if(main){const match=(main.url||"").match(/wa\.me\/(\d+)(?:\?text=([^&]*))?/i);$("bioWaPhone").value=match?match[1].replace(/^55/,""):"";$("bioWaLabel").value=main.label||"Falar pelo WhatsApp";if(match&&match[2){try{$("bioWaMessage").value=decodeURIComponent(match[2].replace(/\+/g," "));}catch{$("bioWaMessage").value="";}}}
+ if(main){const match=(main.url||"").match(/wa\.me\/(\d+)(?:\?text=([^&]*))?/i);$("bioWaPhone").value=match?match[1].replace(/^55/,""):"";$("bioWaLabel").value=main.label||"Falar pelo WhatsApp";if(match&&match[2]){try{$("bioWaMessage").value=decodeURIComponent(match[2].replace(/\+/g," "));}catch{$("bioWaMessage").value="";}}}
  else{$("bioWaPhone").value="";$("bioWaLabel").value="Falar pelo WhatsApp";$("bioWaMessage").value="";}
  renderBioButtons(buttons.filter(b=>b.type!=="whatsapp"));
 }
@@ -539,5 +539,29 @@ $("copyHashtags")?.addEventListener("click",async()=>{
  });
 
 el.copy?.addEventListener("click",async()=>{if(!latest)return;const text=briefing(latest);try{await navigator.clipboard.writeText(text);status(el.copyStatus,"Briefing completo copiado.","success");}catch{const t=node("textarea");t.value=text;t.style.position="fixed";t.style.opacity="0";document.body.append(t);t.select();const ok=document.execCommand("copy");t.remove();status(el.copyStatus,ok?"Briefing copiado.":"Não foi possível copiar neste navegador.",ok?"success":"error");}});
+
+
+function downloadFullReport(){
+ if(!latest){status($("copyStatus"),"Analise um perfil antes de exportar o relatório.","error");return;}
+ const profile=latest.profile||{},metrics=latest.metrics_summary||{};
+ const slug=$("bioSlug")?.value.trim()||String(profile.username||"perfil").toLowerCase();
+ const phone=$("bioWaPhone")?.value.replace(/\D/g,"")||"";
+ const wa=phone?("https://wa.me/"+(phone.startsWith("55")?phone:"55"+phone)+($("bioWaMessage")?.value.trim()?"?text="+encodeURIComponent($("bioWaMessage").value.trim()):"")):"";
+ const extraButtons=Array.from($("bioButtons")?.children||[]).map(row=>{const f=row.querySelectorAll("select,input");return {type:f[0]?.value||"",label:f[1]?.value||"",url:f[2]?.value||""};});
+ const card={slug,public_url:slug?bioPublicUrl(slug):"",username:$("bioUsername")?.value||profile.username||"",display_name:$("bioDisplayName")?.value||profile.name||"",tagline:$("bioTagline")?.value||"",avatar_url:$("bioAvatar")?.value||"",theme_preset:$("bioTheme")?.value||"",accent_color:$("bioAccent")?.value||"",buttons:[...(wa?[{type:"whatsapp",label:$("bioWaLabel")?.value||"Falar pelo WhatsApp",url:wa}]:[]),...extraButtons],libras_video_url:$("bioLibras")?.value||""};
+ const rows=[
+ ["Relatório","Radar Social DEAB — Auditoria e Briefing"],
+ ["Perfil / username",profile.username||""],["Nome do perfil",profile.name||""],["Biografia",profile.biography||""],["Website",profile.website||""],
+ ["Seguidores",profile.followers_count??""],["Publicações",profile.media_count??""],["Média de curtidas",metrics.average_likes??""],["Média de comentários",metrics.average_comments??""],["Engajamento médio",metrics.avg_engagement_rate??""],
+ ["Contexto livre",$("nicheContext")?.value||""],["Briefing — objetivo selecionado", $("briefingObjective")?.value||""],["Briefing — outro objetivo",$("briefingObjectiveOther")?.value||""],["Briefing — público-alvo",$("briefingAudience")?.value||""],["Briefing — carro-chefe/oferta",$("briefingOffer")?.value||""],["Briefing — meta 30 dias",$("briefingGoal")?.value||""],
+ ["Cartão — slug",card.slug],["Cartão — URL pública",card.public_url],["Cartão — nome exibido",card.display_name],["Cartão — apresentação",card.tagline],["Cartão — foto",card.avatar_url],["Cartão — tema",card.theme_preset],["Cartão — cor",card.accent_color],["Cartão — botões",JSON.stringify(card.buttons)],["Cartão — vídeo LIBRAS",card.libras_video_url],
+ ["Concorrentes",JSON.stringify(cleanCompetitors(latest.competitors||[]))],["Análise Gemini",JSON.stringify(latest.ai_analysis||{})],["Plano e calendário",JSON.stringify(actionsAndCalendar(latest))],["Posts",JSON.stringify((latest.posts||[]).map(exportPost))]
+ ];
+ const csv="Campo,Valor\r\n"+rows.map(([k,v])=>[k,v].map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+ const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download="radar-social-"+(String(profile.username||"perfil").replace(/[^a-z0-9_-]/gi,"_"))+"-"+new Date().toISOString().slice(0,10)+".csv";document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+ status($("copyStatus"),"Relatório CSV exportado com briefing guiado e dados do cartão digital.","success");
+}
+$("downloadReport")?.addEventListener("click",downloadFullReport);
 
 </script></body></html>
