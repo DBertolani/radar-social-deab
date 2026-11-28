@@ -1,24 +1,13 @@
 {
+  "functions": {
+    "api/root.js": {
+      "includeFiles": "{bio-home.html,radar.html}"
+    }
+  },
   "rewrites": [
     {
       "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "bio.deab.com.br"
-        }
-      ],
-      "destination": "/bio-home.html"
-    },
-    {
-      "source": "/",
-      "missing": [
-        {
-          "type": "host",
-          "value": "bio.deab.com.br"
-        }
-      ],
-      "destination": "/radar.html"
+      "destination": "/api/root"
     },
     {
       "source": "/:slug((?!api/|radar\\.html|bio\\.html|bio-home\\.html|index\\.html|config\\.json|.*\\..*).*)",
