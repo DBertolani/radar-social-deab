@@ -389,7 +389,7 @@ function bioWaUrl(){
  const message=$("bioWaMessage").value.trim();
  return "https://wa.me/"+full+(message?"?text="+encodeURIComponent(message):"");
 }
-function bioPublicUrl(slug){return BIO_IS_TEST?new URL("bio.html?u="+encodeURIComponent(slug),location.href).href:"https://bio.deab.com.br/"+encodeURIComponent(slug);}
+function bioPublicUrl(slug){const encodedSlug=encodeURIComponent(String(slug||"").trim());return /\.github\.io$/i.test(window.location.hostname)?new URL("bio.html?u="+encodedSlug,window.location.href).href:"https://bio.deab.com.br/"+encodedSlug;}
 function fillBioForm(d){
  $("bioSlug").value=d.slug||"";$("bioUsername").value=d.username||"";$("bioDisplayName").value=d.display_name||"";
  $("bioTagline").value=d.tagline||"";$("bioAvatar").value=d.avatar_url||"";bioPhotoPreview(d.avatar_url||"");
@@ -445,7 +445,7 @@ async function loadPublishedBioCards(){
   }
   if(!Array.isArray(rows))throw Error("A resposta da listagem não está no formato esperado.");
   select.replaceChildren(new Option(rows.length?"Selecione um cartão para editar…":"Nenhum cartão publicado encontrado.",""));
-  rows.forEach(row=>select.add(new Option((row.display_name||row.username||row.slug)+" — /"+row.slug,row.slug)));
+  rows.forEach(row=>select.add(new Option((row.display_name||row.username||row.slug)+" — "+bioPublicUrl(row.slug),row.slug)));
   if(!rows.length)status($("bioPublishStatus"),"Nenhum cartão ativo foi encontrado neste ambiente.","error");
  }catch(error){
   const message=error.name==="AbortError"?"A listagem excedeu 12 segundos. Verifique a conexão e tente novamente.":(error.message||"Não foi possível listar cartões.");
